@@ -1,0 +1,9 @@
+[project]
+name = "PowerGallery"
+description = "A powerful customizable image gallery"
+version = "0.9.0"
+license = {file = "LICENSE"}
+dependencies = ["PyQt6>=6.6.0"]
+
+[project.urls]
+Repository = "https://github.com/tetsuoo-online/PowerGallery.git"

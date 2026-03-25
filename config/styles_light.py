@@ -1,0 +1,335 @@
+# ============================================================================
+# STYLES CONFIGURATION - Modify colors and styles here
+# ============================================================================
+
+# Colors
+COLORS = {
+    'bg_dark': '#1e1e1e',
+    'bg_med': '#2b2b2b',
+    'bg_light': '#3a3a3a',
+    'border_dark': '#444',
+    'border_med': '#555',
+    'text_gray': '#888',
+    'text_gray_light': '#bababa',
+    'light_grey': '#ccc',
+    'text_white': 'white',
+    'green': '#4CAF50',
+    'green_bg': '#2d5016',
+    'green_hover': '#356019',
+    'red_btn': '#c62828',
+    'red_btn_hover': '#d32f2f',
+    'red_dark': '#5c1a1a',
+    'red_dark_hover': '#6b2020',
+    'blue': '#2196F3',
+    'black': 'black',
+    'yellow': 'yellow',
+}
+
+# Styles as functions returning complete stylesheets
+def card_style():
+    return f"""
+        ImageCard {{
+            border: 2px solid {COLORS['text_gray']};
+            border-radius: 12px;
+            background: {COLORS['bg_med']};
+        }}
+    """
+
+def card_border_green():
+    return f"""
+        ImageCard {{
+            border: 2px solid {COLORS['green']};
+            border-radius: 12px;
+            background: {COLORS['bg_med']};
+        }}
+    """
+
+def card_border_red():
+    return f"""
+        ImageCard {{
+            border: 2px solid {COLORS['red_btn']};
+            border-radius: 12px;
+            background: {COLORS['bg_med']};
+        }}
+    """
+
+def close_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['red_btn']};
+            color: {COLORS['text_white']};
+            font-weight: bold;
+            font-size: 18px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['red_btn_hover']};
+        }}
+    """
+
+def checkpoint_label():
+    return f"font-size: 14px; font-weight: bold; color: {COLORS['text_white']}; background: transparent;"
+
+def score_label():
+    return f"""
+        color: {COLORS['yellow']};
+        font-size: 20px;
+        font-weight: bold;
+        border: 2px solid {COLORS['bg_dark']};
+        border-radius: 6px;
+        background: transparent;
+    """
+
+def criterion_button_neutral():
+    return f"""
+        QPushButton {{
+            background: {COLORS['bg_light']};
+            color: {COLORS['text_gray']};
+            border: 1px solid {COLORS['text_gray']};
+            border-radius: 6px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['border_dark']};
+        }}
+    """
+
+def criterion_button_green():
+    return f"""
+        QPushButton {{
+            background: {COLORS['green_bg']};
+            color: {COLORS['green']};
+            border: 1px solid {COLORS['green']};
+            border-radius: 6px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['green_hover']};
+        }}
+    """
+
+def criterion_button_red():
+    return f"""
+        QPushButton {{
+            background: {COLORS['red_dark']};
+            color: {COLORS['red_btn_hover']};
+            border: 1px solid {COLORS['red_btn']};
+            border-radius: 6px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['red_dark_hover']};
+        }}
+    """
+
+def main_theme():
+    return f"""
+        QWidget {{
+            background-color: {COLORS['light_grey']};
+            color: {COLORS['text_white']};
+        }}
+        QDialog {{
+            background-color: {COLORS['light_grey']};
+            color: {COLORS['bg_dark']};
+        }}
+        QGroupBox {{
+            color: {COLORS['bg_dark']};
+            border: 1px solid {COLORS['text_gray']};
+            border-radius: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+        }}
+        QGroupBox::title {{
+            color: {COLORS['bg_dark']};
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 3px;
+        }}
+        QPushButton {{
+            background: {COLORS['bg_light']};
+            color: {COLORS['text_white']};
+            border: 1px solid {COLORS['border_dark']};
+            border-radius: 6px;
+            padding: 5px 10px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['border_dark']};
+        }}
+        QLabel {{
+            color: {COLORS['bg_dark']};
+        }}
+        QSlider::groove:horizontal {{
+            background: {COLORS['bg_light']};
+            height: 8px;
+            border-radius: 4px;
+        }}
+        QSlider::handle:horizontal {{
+            background: {COLORS['blue']};
+            width: 18px;
+            margin: -5px 0;
+            border-radius: 9px;
+        }}
+        QScrollArea {{
+            border: none;
+            background: {COLORS['text_white']};
+        }}
+    """
+
+def drop_zone():
+    return f"""
+        QLabel {{
+            border: 3px dashed {COLORS['text_gray']};
+            background: {COLORS['text_gray_light']};
+            color: {COLORS['text_gray']};
+            font-size: 16px;
+            font-weight: bold;
+            min-height: 80px;
+            border-radius: 8px;
+        }}
+        QLabel:hover {{
+            border-color: {COLORS['blue']};
+            color: {COLORS['blue']};
+        }}
+    """
+
+def clear_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['red_btn']};
+            color: {COLORS['text_white']};
+            font-weight: bold;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['red_btn_hover']};
+        }}
+    """
+
+def main_window():
+    return f"""
+        QMainWindow {{
+            background-color: {COLORS['text_white']};
+        }}
+        QTabWidget::pane {{
+            border: 1px solid {COLORS['border_dark']};
+            background: {COLORS['light_grey']};
+            border-radius: 8px;
+        }}
+        QTabBar::tab {{
+            background: {COLORS['text_gray']};
+            color: {COLORS['text_white']};
+            border: 1px solid {COLORS['light_grey']};
+            padding: 8px 16px;
+            margin-right: 2px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }}
+        QTabBar::tab:selected {{
+            background: {COLORS['light_grey']};
+            border: 1px solid {COLORS['light_grey']};
+            border-bottom: 1px solid {COLORS['light_grey']};
+        }}
+        QTabBar::tab:!selected:hover {{
+            background: {COLORS['light_grey']};
+        }}
+    """
+
+def add_tab_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['bg_light']};
+            color: {COLORS['text_white']};
+            border: 1px solid {COLORS['border_med']};
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 18px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['border_dark']};
+        }}
+    """
+
+def remove_tab_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['red_btn']};
+            color: {COLORS['text_white']};
+            border: 1px solid {COLORS['red_btn']};
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 18px;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['red_btn_hover']};
+        }}
+    """
+
+def fullscreen_background():
+    return f"background-color: {COLORS['black']};"
+
+def fullscreen_close_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['red_btn']};
+            color: {COLORS['text_white']};
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['red_btn_hover']};
+        }}
+    """
+
+def fullscreen_label():
+    return f"color: {COLORS['text_white']}; font-size: 14px; margin-left: 20px;"
+
+def fullscreen_combo():
+    return f"""
+        QComboBox {{
+            background: {COLORS['bg_light']};
+            color: {COLORS['text_white']};
+            border: 1px solid {COLORS['border_med']};
+            border-radius: 6px;
+            padding: 5px 10px;
+            min-width: 150px;
+            font-size: 14px;
+        }}
+        QComboBox::drop-down {{
+            border: none;
+            width: 20px;
+        }}
+        QComboBox::down-arrow {{
+            image: none;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid {COLORS['text_white']};
+            width: 0px;
+            height: 0px;
+        }}
+        QComboBox QAbstractItemView {{
+            background: {COLORS['bg_med']};
+            color: {COLORS['text_white']};
+            selection-background-color: #4a4a4a;
+            border: 1px solid {COLORS['border_med']};
+        }}
+    """
+
+def fullscreen_info():
+    return f"color: {COLORS['text_white']}; font-size: 14px; font-weight: bold; padding: 10px;"
+
+def fullscreen_info_selectable():
+    return f"color: {COLORS['text_white']}; font-size: 14px; font-weight: bold; padding: 10px; selection-background-color: {COLORS['blue']}; selection-color: {COLORS['text_white']};"
+
+def image_container():
+    return f"background: {COLORS['black']};"
+
+def options_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['bg_light']};
+            color: {COLORS['text_white']};
+            border: 1px solid {COLORS['border_med']};
+            border-radius: 6px;
+            font-weight: bold;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['border_dark']};
+        }}
+    """

@@ -1,0 +1,14 @@
+{
+    "language": "fr",
+    "current_style": "lights",
+    "import_mode": "replace",
+    "selected_module": null,
+    "import_in_tabs": false,
+    "auto_load_last": true,
+    "last_session": [
+        "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-A_20260324-224241_Anima-Shirow.json",
+        "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-20251211-044905_fixed.json"
+    ],
+    "theme": "light",
+    "dataset_clear_if_empty": true
+}

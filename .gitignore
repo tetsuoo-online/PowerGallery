@@ -1,0 +1,11 @@
+__pycache__/
+_grids/
+_temp/
+venv/
+*.pyc
+*.bak
+*- Copie*.py
+README_*
+node.zip
+_PUBLISH.BAT
+_update-version.ps1

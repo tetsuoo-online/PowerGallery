@@ -1,0 +1,12 @@
+V9:
+1. Problème d'inconsistence avec les styles : la couleur dans les cards semble garder le dernier style sélectionné; même en changeant de style c'est la couleur précédente qui persiste. peut-être à cause d'une inconsistence au niveau des noms de variables.
+Par ailleurs certains noms des variables couleur ne sont pas appropriés, ils désignent des couleurs spécifiques alors même qu'elles sont appelées à changer avec la personnalisation. Il faut trouver un autre dictionnaire de noms pour les thème; peut-être moins parlants (contour1, contour2, fonction1, hover, etc) mais plus cohérents, sinon on se retrouve avec par exemple pour un thème rouge (Bloody Mary) des variables "text_gray_light" ou "light_grey" qui sont en fait remplacées par du vert (je n'ai pas trouvé de correspondance dans l'interface)
+
+2. Options > General : ajouter les options "Titre" et "Description" (décochées par défaut) qui permettent d'éditer la zone Title et Description des cards (l'équivalent de checkpointName et criteria dans les grids JSON du mode Checkpoint Manager).
+	Cela induit que par défaut quand aucun module n'est sélectionné, l'export de grid renseigne les paramètres absolutePath, title, description
+	
+3. Nouveau module "Metadata" : Si activé, un paramètre metadata est ajouté aux JSON, avec les sous-paramètres 'type' et 'meta'.
+	> Options du module Metadata (cochées par défaut): "EXIF", "IPTC", "XMP"
+
+3. Ajouter l'export d'image-grille (Image Grid Export) -> ouvre une fenêtre :
+	- options d'images à cocher, dépendant du module ou du JSON chargé. Par exemple en mode checkpoint Manager on récupère les paramètres absolutePath, checkpointName, criteria, totalScore.
