@@ -2,7 +2,7 @@
     "language": "fr",
     "current_style": "lights",
     "import_mode": "replace",
-    "selected_module": null,
+    "selected_module": "checkpoint_manager",
     "import_in_tabs": false,
     "auto_load_last": true,
     "last_session": [
