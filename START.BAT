@@ -20,4 +20,4 @@ REM start "" venv\Scripts\pythonw.exe checkpoints_gallery.py
 REM DEBUG - Launch app with the console
 call venv\Scripts\activate.bat
 python power_gallery.py
-pause
+exit
