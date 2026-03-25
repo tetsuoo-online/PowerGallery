@@ -6,6 +6,7 @@ venv/
 *.bak
 *- Copie*.py
 README_*
+TODO.txt
 node.zip
 _PUBLISH.BAT
 _update-version.ps1

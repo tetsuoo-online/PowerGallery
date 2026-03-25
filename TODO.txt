@@ -4,9 +4,18 @@ Par ailleurs certains noms des variables couleur ne sont pas appropriés, ils d�
 
 2. Options > General : ajouter les options "Titre" et "Description" (décochées par défaut) qui permettent d'éditer la zone Title et Description des cards (l'équivalent de checkpointName et criteria dans les grids JSON du mode Checkpoint Manager).
 	Cela induit que par défaut quand aucun module n'est sélectionné, l'export de grid renseigne les paramètres absolutePath, title, description
-	
-3. Nouveau module "Metadata" : Si activé, un paramètre metadata est ajouté aux JSON, avec les sous-paramètres 'type' et 'meta'.
-	> Options du module Metadata (cochées par défaut): "EXIF", "IPTC", "XMP"
 
-3. Ajouter l'export d'image-grille (Image Grid Export) -> ouvre une fenêtre :
-	- options d'images à cocher, dépendant du module ou du JSON chargé. Par exemple en mode checkpoint Manager on récupère les paramètres absolutePath, checkpointName, criteria, totalScore.
+3. Clic droit sur images :
+	- doit refléter les infos disponibles pour les images. Par exemple en mode par défaut (aucun module chargé), on devrait voir l'info 'Title'
+	- avant Size, ajouter la résolution
+	
+4. Nouveau module "Metadata" : Si activé, un paramètre metadata est ajouté aux JSON, avec les sous-paramètres 'type' et 'meta'.
+	> Options du module Metadata (cochées par défaut), Type: "EXIF", "IPTC", "XMP"
+	> détection des metadatas à développer plus tard; afficher le contenu
+
+5. Ajouter l'export de la grille d'images en une image unique. Menu> Bouton [ Grid2Img ], avant le bouton Export.
+	- ouvre une fenêtre> options de textes à ajouter, dépendant des informations disponibles sur les images, en fonction du module ou du JSON chargé. Par exemple en mode checkpoint Manager on récupère les paramètres absolutePath, checkpointName, criteria, totalScore
+	- en gros l'image sera une copie simplifiée de la grille d'images, customisable:
+		- titre
+		- fond uni (blanc par défaut)
+		- espacement des images (10px par défaut)
