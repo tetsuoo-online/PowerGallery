@@ -3,12 +3,18 @@ v9/
 │   ├── custom_styles/
 │   │   ├── __init__.py
 │   │   ├── BloodyMary_v3.py
-│   │   ├── dark_copy.py
-│   │   ├── light_copy.py
-│   │   └── light_v2.py
+│   │   ├── light_v2.py
+│   │   └── light_v3.py
 │   ├── lang/
+│   │   ├── flags/
+│   │   │   ├── de.gif
+│   │   │   ├── en.gif
+│   │   │   ├── esp.gif
+│   │   │   └── fr.gif
 │   │   ├── __init__.py
+│   │   ├── de.py
 │   │   ├── en.py
+│   │   ├── esp.py
 │   │   └── fr.py
 │   ├── __init__.py
 │   ├── options_style.py
@@ -30,4 +36,5 @@ v9/
 ├── LICENSE
 ├── power_gallery.py
 ├── pyproject.toml
-└── START.BAT
+├── START.BAT
+└── structure.txt
