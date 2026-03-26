@@ -20,3 +20,4 @@ V9:
 		- fond uni (blanc par défaut)
 		- espacement des images (10px par défaut)
 		
+8. langues : traduction manquantes

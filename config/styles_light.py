@@ -6,34 +6,36 @@
 
 COLORS = {
     # ── Backgrounds ───────────────────────────────────────────────────────────
-    'bg1':   '#ffffff',
-    'bg2':   '#2b2b2b',
-    'bg3':   '#3a3a3a',
-    'bg4':   '#bababa',    # drop zone background
+    'bg1':          '#ffffff',
+    'bg2':          '#2b2b2b',
+    'bg3':          '#3a3a3a',
+    'bg4':          '#bababa',    # drop zone background
     # ── Borders ───────────────────────────────────────────────────────────────
-    'border1': '#666666',
-    'border2': '#888888',
+    'border1':      '#666666',
+    'border2':      '#888888',
     # ── Foreground / Text ─────────────────────────────────────────────────────
-    'text1':     '#ffffff',      # primary text (on dark widgets)
-    'text2':     '#888888',       # secondary / muted text
-    'crit1':     '#888888',    # text on light surface
-    'tab_bg': '#cccccc',    # grid bg color
-    # ── Tabs ────────────────────────────────────────────────────
-    'tab_sel':  '#cccccc',
+    'text1':        '#ffffff',    # primary text (on dark widgets)
+    'text2':        '#888888',    # secondary / muted text
+    'crit1':        '#888888',    # criterion button neutral text+border
+    # ── Tabs ──────────────────────────────────────────────────────────────────
+    'tab_bg':       '#cccccc',
+    'tab_sel':      '#cccccc',
     # ── Functional accents ────────────────────────────────────────────────────
-    'accent':       '#2196F3',  # interactive / highlight / split handle
-    'score':        'yellow',   # score indicator
+    'accent':       '#2196F3',    # interactive / highlight / split handle
+    'score':        'yellow',
     'score_border': '#1e1e1e',
-    'canvas':       'black',    # image viewer / fullscreen background
-    # ── Positive state ────────────────────────────────────────────────────────
+    'canvas':       'black',      # image viewer / fullscreen background
+    # ── UI danger (close, clear, remove tab) ──────────────────────────────────
+    'danger':       '#c62828',
+    'danger_hover': '#eb3535',
+    # ── Critère positif ───────────────────────────────────────────────────────
     'pos':          '#4CAF50',
     'pos_bg':       '#2d5016',
     'pos_hover':    '#356019',
-    # ── Negative state ────────────────────────────────────────────────────────
-    'neg':          '#c62828',
-    'neg_hover':    '#eb3535',
+    # ── Critère négatif ───────────────────────────────────────────────────────
+    'neg':          '#ef5350',
     'neg_bg':       '#5c1a1a',
-    'neg_bg_hover': '#6b2020',
+    'neg_hover':    '#6b2020',
 }
 
 from pathlib import Path as _Path

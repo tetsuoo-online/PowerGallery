@@ -17,14 +17,15 @@ COLORS = {
     'score': 'yellow',
     'score_border': '#550000',
     'canvas': '#550000',
+    'danger': '#c62828',
+    'danger_hover': '#eb3535',
     'pos': '#4CAF50',
     'pos_bg': '#2d5016',
     'pos_hover': '#356019',
     'neg': '#c62828',
-    'neg_hover': '#eb3535',
     'neg_bg': '#5c1a1a',
-    'neg_bg_hover': '#6b2020',
+    'neg_hover': '#6b2020',
 }
 
 from pathlib import Path as _Path
-exec((_Path(__file__).parent.parent/ 'styles_base_layout.py').read_text(encoding='utf-8'))
+exec((_Path(__file__).parent.parent / 'styles_base_layout.py').read_text(encoding='utf-8'))

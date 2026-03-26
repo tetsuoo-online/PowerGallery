@@ -2,6 +2,15 @@
 # STYLES BASE LAYOUT
 # Shared style functions for all themes (dark, light, custom).
 # Each theme file defines COLORS then exec()'s this file.
+#
+# COLOR FAMILIES:
+#   bg1-4, border1-2, text1-2, crit1  → UI generale
+#   tab_bg, tab_sel                    → Onglets
+#   accent                             → Interactif / highlight
+#   score, score_border, canvas        → Widgets speciaux
+#   danger, danger_hover               → Boutons destructifs UI (close, clear, remove)
+#   pos, pos_bg, pos_hover             → Critère positif (carte + bouton)
+#   neg, neg_bg, neg_hover             → Critère négatif (carte + bouton)
 # ============================================================================
 
 # Styles as functions |Marker for style_editor, don't edit or remove
@@ -38,13 +47,13 @@ def card_border_red():
 def close_button():
     return f"""
         QPushButton {{
-            background: {COLORS['neg']};
+            background: {COLORS['danger']};
             color: {COLORS['text1']};
             font-weight: bold;
             font-size: 18px;
         }}
         QPushButton:hover {{
-            background: {COLORS['neg_hover']};
+            background: {COLORS['danger_hover']};
         }}
     """
 
@@ -91,12 +100,12 @@ def criterion_button_red():
     return f"""
         QPushButton {{
             background: {COLORS['neg_bg']};
-            color: {COLORS['neg_hover']};
+            color: {COLORS['neg']};
             border: 1px solid {COLORS['neg']};
             border-radius: 6px;
         }}
         QPushButton:hover {{
-            background: {COLORS['neg_bg_hover']};
+            background: {COLORS['neg_hover']};
         }}
     """
 
@@ -169,12 +178,12 @@ def drop_zone():
 def clear_button():
     return f"""
         QPushButton {{
-            background: {COLORS['neg']};
+            background: {COLORS['danger']};
             color: {COLORS['text1']};
             font-weight: bold;
         }}
         QPushButton:hover {{
-            background: {COLORS['neg_hover']};
+            background: {COLORS['danger_hover']};
         }}
     """
 
@@ -225,15 +234,15 @@ def add_tab_button():
 def remove_tab_button():
     return f"""
         QPushButton {{
-            background: {COLORS['neg']};
+            background: {COLORS['danger']};
             color: {COLORS['text1']};
-            border: 1px solid {COLORS['neg']};
+            border: 1px solid {COLORS['danger']};
             border-radius: 6px;
             font-weight: bold;
             font-size: 18px;
         }}
         QPushButton:hover {{
-            background: {COLORS['neg_hover']};
+            background: {COLORS['danger_hover']};
         }}
     """
 
@@ -243,7 +252,7 @@ def fullscreen_background():
 def fullscreen_close_button():
     return f"""
         QPushButton {{
-            background: {COLORS['neg']};
+            background: {COLORS['danger']};
             color: {COLORS['text1']};
             border: none;
             border-radius: 6px;
@@ -251,7 +260,7 @@ def fullscreen_close_button():
             font-weight: bold;
         }}
         QPushButton:hover {{
-            background: {COLORS['neg_hover']};
+            background: {COLORS['danger_hover']};
         }}
     """
 
@@ -286,7 +295,7 @@ def fullscreen_combo():
             color: {COLORS['text1']};
         }}
         QComboBox QAbstractItemView::item:selected {{
-            background: {COLORS['neg']};
+            background: {COLORS['accent']};
         }}
     """
 
