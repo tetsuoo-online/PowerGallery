@@ -1,6 +1,6 @@
 {
     "language": "fr",
-    "current_style": "lights",
+    "current_style": "light",
     "import_mode": "replace",
     "selected_module": "checkpoint_manager",
     "import_in_tabs": false,

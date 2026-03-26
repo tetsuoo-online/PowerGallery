@@ -1,78 +1,94 @@
 # ============================================================================
-# STYLES CONFIGURATION - Modify colors and styles here
+# STYLES CONFIGURATION - Dark theme
+# Variables use semantic/role-based names, not color-based names.
 # ============================================================================
 
-# Colors
 COLORS = {
-    'bg_dark': '#1e1e1e',
-    'bg_med': '#2b2b2b',
-    'bg_light': '#3a3a3a',
-    'border_dark': '#444',
-    'border_med': '#555',
-    'text_gray': '#888',
-    'text_white': 'white',
-    'green': '#4CAF50',
-    'green_bg': '#2d5016',
-    'green_hover': '#356019',
-    'red_btn': '#c62828',
-    'red_btn_hover': '#d32f2f',
-    'red_dark': '#5c1a1a',
-    'red_dark_hover': '#6b2020',
-    'blue': '#2196F3',
-    'black': 'black',
-    'yellow': 'yellow',
+    # ── Backgrounds (score_border = darkest … bg3 = lightest) ─────────────────────────
+    'bg1':     '#2e2e2e',
+    'bg2':     '#2b2b2b',
+    'bg3':     '#333333',
+    'bg4':     '#2b2b2b',
+    # ── Borders ───────────────────────────────────────────────────────────────
+    'border1': '#444',
+    'border2': '#555',
+    # ── Foreground / Text ─────────────────────────────────────────────────────
+    'text1':     'white',      # primary text
+    'text2':     '#888',       # secondary / muted text
+    'crit1':     '#888',    # tertiary text
+    'tab_bg': '#1e1e1e',    # grid bg color
+    # ── Tabs ────────────────────────────────────────────────────
+    'tab_sel':  '#444',
+    # ── Functional accents ────────────────────────────────────────────────────
+    'accent':  '#2196F3',    # interactive / highlight / split handle
+    'score':   'yellow',     # score indicator
+    'score_border':   '#1e1e1e',
+    'canvas':  'black',      # image viewer / fullscreen background
+    # ── Positive state ────────────────────────────────────────────────────────
+    'pos':          '#4CAF50',
+    'pos_bg':       '#2d5016',
+    'pos_hover':    '#356019',
+    # ── Negative state ────────────────────────────────────────────────────────
+    'neg':          '#c62828',
+    'neg_hover':    '#eb3535',
+    'neg_bg':       '#5c1a1a',
+    'neg_bg_hover': '#6b2020',
 }
 
-# Styles as functions returning complete stylesheets
+
+# Styles as functions |Marker for style_editor, don't edit or remove
 def card_style():
     return f"""
         ImageCard {{
-            border: 2px solid {COLORS['border_dark']};
+            border: 2px solid {COLORS['border1']};
             border-radius: 12px;
-            background: {COLORS['bg_med']};
+            background: {COLORS['bg2']};
+        }}
+    """
+
+def card_border_pos():
+    return f"""
+        ImageCard {{
+            border: 2px solid {COLORS['pos']};
+            border-radius: 12px;
+            background: {COLORS['bg2']};
         }}
     """
 
 def card_border_green():
-    return f"""
-        ImageCard {{
-            border: 2px solid {COLORS['green']};
-            border-radius: 12px;
-            background: {COLORS['bg_med']};
-        }}
-    """
+    return card_border_pos()
 
 def card_border_red():
     return f"""
         ImageCard {{
-            border: 2px solid {COLORS['red_btn']};
+            border: 2px solid {COLORS['neg']};
             border-radius: 12px;
-            background: {COLORS['bg_med']};
+            background: {COLORS['bg2']};
         }}
     """
 
 def close_button():
     return f"""
         QPushButton {{
-            background: {COLORS['red_btn']};
-            color: {COLORS['text_white']};
+            background: {COLORS['neg']};
+            color: {COLORS['text1']};
             font-weight: bold;
             font-size: 18px;
         }}
         QPushButton:hover {{
-            background: {COLORS['red_btn_hover']};
+            background: {COLORS['neg_hover']};
         }}
     """
 
 def checkpoint_label():
-    return f"font-size: 14px; font-weight: bold; color: {COLORS['text_white']}; background: transparent;"
+    return f"font-size: 14px; font-weight: bold; color: {COLORS['text1']}; background: transparent;"
 
 def score_label():
     return f"""
-        color: {COLORS['yellow']};
+        color: {COLORS['score']};
         font-size: 20px;
         font-weight: bold;
-        border: 2px solid {COLORS['bg_dark']};
+        border: 2px solid {COLORS['score_border']};
         border-radius: 6px;
         background: transparent;
     """
@@ -80,210 +96,206 @@ def score_label():
 def criterion_button_neutral():
     return f"""
         QPushButton {{
-            background: {COLORS['bg_light']};
-            color: {COLORS['text_gray']};
-            border: 1px solid {COLORS['text_gray']};
+            background: {COLORS['bg3']};
+            color: {COLORS['crit1']};
+            border: 1px solid {COLORS['crit1']};
             border-radius: 6px;
         }}
         QPushButton:hover {{
-            background: {COLORS['border_dark']};
+            background: {COLORS['border1']};
         }}
     """
 
 def criterion_button_green():
     return f"""
         QPushButton {{
-            background: {COLORS['green_bg']};
-            color: {COLORS['green']};
-            border: 1px solid {COLORS['green']};
+            background: {COLORS['pos_bg']};
+            color: {COLORS['pos']};
+            border: 1px solid {COLORS['pos']};
             border-radius: 6px;
         }}
         QPushButton:hover {{
-            background: {COLORS['green_hover']};
+            background: {COLORS['pos_hover']};
         }}
     """
 
 def criterion_button_red():
     return f"""
         QPushButton {{
-            background: {COLORS['red_dark']};
-            color: {COLORS['red_btn_hover']};
-            border: 1px solid {COLORS['red_btn']};
+            background: {COLORS['neg_bg']};
+            color: {COLORS['neg_hover']};
+            border: 1px solid {COLORS['neg']};
             border-radius: 6px;
         }}
         QPushButton:hover {{
-            background: {COLORS['red_dark_hover']};
+            background: {COLORS['neg_bg_hover']};
         }}
     """
 
 def main_theme():
     return f"""
         QWidget {{
-            background-color: {COLORS['bg_dark']};
-            color: {COLORS['text_white']};
-        }}
-        QDialog {{
-            background-color: {COLORS['bg_dark']};
-            color: {COLORS['text_white']};
+            background-color: {COLORS['tab_bg']};
+            color: {COLORS['text1']};
         }}
         QGroupBox {{
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['border_med']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['border2']};
             border-radius: 6px;
             margin-top: 8px;
             padding-top: 8px;
         }}
         QGroupBox::title {{
-            color: {COLORS['text_white']};
+            color: {COLORS['text1']};
             subcontrol-origin: margin;
             left: 10px;
             padding: 0 3px;
         }}
         QPushButton {{
-            background: {COLORS['bg_light']};
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['border_med']};
+            background: {COLORS['bg3']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['border2']};
             border-radius: 6px;
             padding: 5px 10px;
         }}
         QPushButton:hover {{
-            background: {COLORS['border_dark']};
+            background: {COLORS['border1']};
         }}
         QLabel {{
-            color: {COLORS['text_white']};
+            color: {COLORS['text1']};
         }}
         QSlider::groove:horizontal {{
-            background: {COLORS['bg_light']};
+            background: {COLORS['bg3']};
             height: 8px;
             border-radius: 4px;
         }}
         QSlider::handle:horizontal {{
-            background: {COLORS['blue']};
+            background: {COLORS['accent']};
             width: 18px;
             margin: -5px 0;
             border-radius: 9px;
         }}
         QScrollArea {{
             border: none;
-            background: {COLORS['bg_dark']};
+            background: {COLORS['tab_bg']};
         }}
     """
 
 def drop_zone():
     return f"""
         QLabel {{
-            border: 3px dashed {COLORS['border_med']};
-            background: {COLORS['bg_med']};
-            color: {COLORS['text_gray']};
+            border: 3px dashed {COLORS['border2']};
+            background: {COLORS['bg4']};
+            color: {COLORS['text2']};
             font-size: 16px;
             font-weight: bold;
             min-height: 80px;
             border-radius: 8px;
         }}
         QLabel:hover {{
-            border-color: {COLORS['blue']};
-            color: {COLORS['blue']};
+            border-color: {COLORS['accent']};
+            color: {COLORS['accent']};
         }}
     """
 
 def clear_button():
     return f"""
         QPushButton {{
-            background: {COLORS['red_btn']};
-            color: {COLORS['text_white']};
+            background: {COLORS['neg']};
+            color: {COLORS['text1']};
             font-weight: bold;
         }}
         QPushButton:hover {{
-            background: {COLORS['red_btn_hover']};
+            background: {COLORS['neg_hover']};
         }}
     """
 
 def main_window():
     return f"""
         QMainWindow {{
-            background-color: {COLORS['bg_dark']};
+            background-color: {COLORS['bg1']};
         }}
         QTabWidget::pane {{
-            border: 1px solid {COLORS['border_dark']};
-            background: {COLORS['bg_dark']};
+            border: 1px solid {COLORS['border1']};
+            background: {COLORS['tab_bg']};
             border-radius: 8px;
         }}
         QTabBar::tab {{
-            background: {COLORS['bg_med']};
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['border_dark']};
+            background: {COLORS['bg2']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['border1']};
             padding: 8px 16px;
             margin-right: 2px;
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
         }}
         QTabBar::tab:selected {{
-            background: {COLORS['border_dark']};
-            border: 1px solid {COLORS['border_dark']};
-            border-bottom: 1px solid {COLORS['border_dark']};
+            background: {COLORS['tab_sel']};
+            border: 1px solid {COLORS['tab_sel']};
+            border-bottom: 1px solid {COLORS['tab_sel']};
         }}
         QTabBar::tab:!selected:hover {{
-            background: #353535;
+            background: {COLORS['tab_bg']};
         }}
     """
 
 def add_tab_button():
     return f"""
         QPushButton {{
-            background: {COLORS['bg_light']};
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['border_med']};
+            background: {COLORS['bg3']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['border2']};
             border-radius: 6px;
             font-weight: bold;
             font-size: 18px;
         }}
         QPushButton:hover {{
-            background: {COLORS['border_dark']};
+            background: {COLORS['border1']};
         }}
     """
 
 def remove_tab_button():
     return f"""
         QPushButton {{
-            background: {COLORS['red_btn']};
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['red_btn']};
+            background: {COLORS['neg']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['neg']};
             border-radius: 6px;
             font-weight: bold;
             font-size: 18px;
         }}
         QPushButton:hover {{
-            background: {COLORS['red_btn_hover']};
+            background: {COLORS['neg_hover']};
         }}
     """
 
 def fullscreen_background():
-    return f"background-color: {COLORS['black']};"
+    return f"background-color: {COLORS['canvas']};"
 
 def fullscreen_close_button():
     return f"""
         QPushButton {{
-            background: {COLORS['red_btn']};
-            color: {COLORS['text_white']};
+            background: {COLORS['neg']};
+            color: {COLORS['text1']};
             border: none;
             border-radius: 6px;
             font-size: 16px;
             font-weight: bold;
         }}
         QPushButton:hover {{
-            background: {COLORS['red_btn_hover']};
+            background: {COLORS['neg_hover']};
         }}
     """
 
 def fullscreen_label():
-    return f"color: {COLORS['text_white']}; font-size: 14px; margin-left: 20px;"
+    return f"color: {COLORS['text1']}; font-size: 14px; margin-left: 20px;"
 
 def fullscreen_combo():
     return f"""
         QComboBox {{
-            background: {COLORS['bg_light']};
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['border_med']};
+            background: {COLORS['bg3']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['border2']};
             border-radius: 6px;
             padding: 5px 10px;
             min-width: 150px;
@@ -297,37 +309,39 @@ def fullscreen_combo():
             image: none;
             border-left: 5px solid transparent;
             border-right: 5px solid transparent;
-            border-top: 5px solid {COLORS['text_white']};
+            border-top: 5px solid {COLORS['text1']};
             width: 0px;
             height: 0px;
         }}
         QComboBox QAbstractItemView {{
-            background: {COLORS['bg_med']};
-            color: {COLORS['text_white']};
-            selection-background-color: #4a4a4a;
-            border: 1px solid {COLORS['border_med']};
+        	background: {COLORS['bg3']};
+            color: {COLORS['text1']};
+        }}
+        QComboBox QAbstractItemView::item:selected {{
+            background: {COLORS['neg']};
         }}
     """
 
 def fullscreen_info():
-    return f"color: {COLORS['text_white']}; font-size: 14px; font-weight: bold; padding: 10px;"
+    return f"color: {COLORS['text1']}; font-size: 14px; font-weight: bold; padding: 10px;"
 
 def fullscreen_info_selectable():
-    return f"color: {COLORS['text_white']}; font-size: 14px; font-weight: bold; padding: 10px; selection-background-color: {COLORS['blue']}; selection-color: {COLORS['text_white']};"
+    return (f"color: {COLORS['text1']}; font-size: 14px; font-weight: bold; padding: 10px; "
+            f"selection-background-color: {COLORS['accent']}; selection-color: {COLORS['text1']};")
 
 def image_container():
-    return f"background: {COLORS['black']};"
+    return f"background: {COLORS['canvas']};"
 
 def options_button():
     return f"""
         QPushButton {{
-            background: {COLORS['bg_light']};
-            color: {COLORS['text_white']};
-            border: 1px solid {COLORS['border_med']};
+            background: {COLORS['bg3']};
+            color: {COLORS['text1']};
+            border: 1px solid {COLORS['border2']};
             border-radius: 6px;
             font-weight: bold;
         }}
         QPushButton:hover {{
-            background: {COLORS['border_dark']};
+            background: {COLORS['border1']};
         }}
     """

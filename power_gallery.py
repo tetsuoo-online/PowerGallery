@@ -13,7 +13,7 @@ from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen
 
 from config.settings import config
 from widgets import CardDetailsDialog
-from modules import CheckpointManager
+from modules.checkpoint_manager import CheckpointManager
 from modules.dataset_manager import DatasetManager
 
 
@@ -231,7 +231,9 @@ class ImageCard(QFrame):
         layout.setSpacing(3)
 
         # Top bar (close btn + optional module section)
+        top_container = QWidget()
         top_layout = QHBoxLayout()
+        top_layout.setContentsMargins(0, 0, 0, 0)
         self.close_btn = QPushButton("×")
         self.close_btn.setFixedSize(25, 25)
         self.close_btn.setStyleSheet(get_styles().close_button())
@@ -242,6 +244,8 @@ class ImageCard(QFrame):
         module = self.get_active_module()
         if module and hasattr(module, 'populate_card_top'):
             module.populate_card_top(self, top_layout)
+
+        top_container.setLayout(top_layout)
 
         # Image
         image_container = QWidget()
@@ -266,12 +270,18 @@ class ImageCard(QFrame):
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
 
-        layout.addLayout(top_layout)
+        # Store containers for apply_styles
+        self._top_container = top_container
+        self._image_container = image_container
+        self._bottom_widget = bottom_widget
+
+        layout.addWidget(top_container)
         layout.addWidget(image_container)
         if bottom_widget:
             layout.addWidget(bottom_widget)
 
         self.setLayout(layout)
+        self._apply_container_bg()
 
     def smart_square_crop(self, pixmap):
         w, h = pixmap.width(), pixmap.height()
@@ -280,8 +290,17 @@ class ImageCard(QFrame):
         y = (h - new_size) // 2
         return pixmap.copy(x, y, new_size, new_size)
 
+    def _apply_container_bg(self):
+        bg = get_styles().COLORS.get('bg2', '#2b2b2b')
+        style = f"background-color: {bg};"
+        self._top_container.setStyleSheet(style)
+        self._image_container.setStyleSheet(style)
+        if self._bottom_widget:
+            self._bottom_widget.setStyleSheet(style)
+
     def apply_styles(self):
         self.close_btn.setStyleSheet(get_styles().close_button())
+        self._apply_container_bg()
         module = self.get_active_module()
         if module and hasattr(module, 'apply_card_styles'):
             module.apply_card_styles(self)
@@ -340,8 +359,8 @@ class ImageCard(QFrame):
             self._original_stylesheet = self.styleSheet()
             styles = get_styles()
             self.setStyleSheet(
-                f"ImageCard {{ border: 3px solid {styles.COLORS['blue']}; "
-                f"border-radius: 12px; background: {styles.COLORS['bg_med']}; }}")
+                f"ImageCard {{ border: 3px solid {styles.COLORS['accent']}; "
+                f"border-radius: 12px; background: {styles.COLORS['bg2']}; }}")
 
     def dragLeaveEvent(self, event):
         if hasattr(self, '_original_stylesheet'):
@@ -437,7 +456,7 @@ class GridTab(QWidget):
         log_label = QLabel("ℹ️ Info :")
         log_label.setStyleSheet("font-weight: bold;")
         self.log_label = QLabel("")
-        self.log_label.setStyleSheet("color: gray;")
+        self.log_label.setStyleSheet(f"color: {get_styles().COLORS['text2']};")
         self.log_label.setMinimumWidth(300)
         self.size_label = QLabel(config.get_text('slider_label') + ":")
         self.size_slider = QSlider(Qt.Orientation.Horizontal)
@@ -539,25 +558,48 @@ class GridTab(QWidget):
 
     # ── Logging ───────────────────────────────────────────────────────────────
 
-    def log(self, message, persistent_callback=None):
-        self.log_label.setText(message)
-        self.log_label.setStyleSheet("color: #2196F3; font-weight: bold;")
-        QTimer.singleShot(3000, persistent_callback or self.safe_clear_log)
+    def _get_module_name(self):
+        module_name = config.get('selected_module')
+        if module_name and module_name in MODULE_REGISTRY:
+            module = MODULE_REGISTRY[module_name]
+            return module.get_module_name() if hasattr(module, 'get_module_name') else module_name
+        return ""
 
-    def show_info_persistent(self, text, color="#2196F3"):
+    def _set_idle(self):
+        """Restore log label to idle state (module name in muted color)."""
         try:
             if self.log_label is not None:
-                self.log_label.setText(text)
-                self.log_label.setStyleSheet(f"color: {color}; font-weight: bold;")
+                self.log_label.setText(self._get_module_name())
+                self.log_label.setStyleSheet(f"color: {get_styles().COLORS['text2']};")
+        except RuntimeError:
+            pass
+
+    def log(self, message, persistent_callback=None):
+        module = self._get_module_name()
+        text = f"{module} - {message}" if module else message
+        self.log_label.setText(text)
+        self.log_label.setStyleSheet(f"color: {get_styles().COLORS['accent']}; font-weight: bold;")
+        if persistent_callback:
+            def run_then_idle():
+                persistent_callback()
+                QTimer.singleShot(5000, self._set_idle)
+            QTimer.singleShot(3000, run_then_idle)
+        else:
+            QTimer.singleShot(3000, self._set_idle)
+
+    def show_info_persistent(self, text, color=None):
+        try:
+            if self.log_label is not None:
+                module = self._get_module_name()
+                display = f"{module} - {text}" if module else text
+                self.log_label.setText(display)
+                c = color or get_styles().COLORS['accent']
+                self.log_label.setStyleSheet(f"color: {c}; font-weight: bold;")
         except RuntimeError:
             pass
 
     def safe_clear_log(self):
-        try:
-            if self.log_label is not None:
-                self.log_label.setText("")
-        except RuntimeError:
-            pass
+        self._set_idle()
 
     # ── Styles ────────────────────────────────────────────────────────────────
 
@@ -936,6 +978,7 @@ class GridTab(QWidget):
         self.size_label.setText(config.get_text('slider_label') + ":")
         self.drop_zone.setText(config.get_text('drop_zone_text'))
         self.update_module_dropdown()
+        self._set_idle()
 
     def get_tab_widget(self):
         parent = self.parent()
@@ -1083,12 +1126,12 @@ class FullscreenViewer(QWidget):
             lw = int(dw * self.split_position)
             painter.drawPixmap(x, y, s1, 0, 0, lw, dh)
             painter.drawPixmap(split_x, y, s2, int(s2.width() * self.split_position), 0, dw - lw, dh)
-            painter.setPen(QPen(QColor(get_styles().COLORS['text_white']), 3))
+            painter.setPen(QPen(QColor(get_styles().COLORS['text1']), 3))
             painter.drawLine(split_x, y, split_x, y + dh)
             handle_y = y + dh // 2
-            painter.setBrush(QColor(get_styles().COLORS['blue']))
+            painter.setBrush(QColor(get_styles().COLORS['accent']))
             painter.drawEllipse(split_x - 15, handle_y - 15, 30, 30)
-            painter.setPen(QPen(QColor(get_styles().COLORS['text_white']), 2))
+            painter.setPen(QPen(QColor(get_styles().COLORS['text1']), 2))
             painter.drawLine(split_x - 8, handle_y, split_x + 8, handle_y)
         painter.end()
 

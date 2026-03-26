@@ -14,10 +14,10 @@ if not exist venv (
     exit /b 1
 )
 
-REM Launch app - no console
-REM start "" venv\Scripts\pythonw.exe checkpoints_gallery.py
+REM ::DEBUG - Launch app with the console
+REM call venv\Scripts\activate.bat
+REM python power_gallery.py
+REM pause
 
-REM DEBUG - Launch app with the console
-call venv\Scripts\activate.bat
-python power_gallery.py
-exit
+REM ::Launch app - no console
+start "" venv\Scripts\pythonw.exe power_gallery.py

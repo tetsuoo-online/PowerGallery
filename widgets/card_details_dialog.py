@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QPainter, QColor
+from PyQt6.QtGui import QPainter, QColor, QPixmap
 
 
 class CardDetailsDialog(QWidget):
@@ -50,10 +50,30 @@ class CardDetailsDialog(QWidget):
             file_size = "Unknown"
             file_date = "Unknown"
         
+        # Get image resolution
+        try:
+            pixmap = QPixmap(str(file_path))
+            if not pixmap.isNull():
+                resolution = f"{pixmap.width()} × {pixmap.height()} px"
+            else:
+                resolution = "Unknown"
+        except Exception:
+            resolution = "Unknown"
+        
+        # Determine name label based on active module
+        try:
+            from config.settings import config
+            module_key = config.get('selected_module')
+        except Exception:
+            module_key = None
+        
+        name_label = "Checkpoint" if module_key else "Title"
+        
         # Create labels with info
         info_items = [
-            ("Checkpoint", self.card.checkpoint_name),
+            (name_label, self.card.checkpoint_name),
             ("Filename", file_path.name),
+            ("Resolution", resolution),
             ("Size", file_size),
             ("Modified", file_date),
         ]
@@ -108,7 +128,6 @@ class CardDetailsDialog(QWidget):
     
     def closeEvent(self, event):
         """Clear reference in grid_tab when closing"""
-        # Find grid_tab and clear reference
         if self.card:
             widget = self.card.parent()
             while widget:
@@ -123,24 +142,18 @@ class CardDetailsDialog(QWidget):
     def show_near_card(self):
         """Position the dialog near the card"""
         if self.card and self.card.window():
-            # Get card's global position
             card_global_pos = self.card.mapToGlobal(QPoint(0, 0))
             
-            # Calculate position (to the right and slightly down from card)
             x = card_global_pos.x() + self.card.width() + 10
             y = card_global_pos.y()
             
-            # Check if it would go off-screen (right edge)
             screen_geometry = self.screen().geometry()
             if x + self.width() > screen_geometry.right():
-                # Place it to the left of the card instead
                 x = card_global_pos.x() - self.width() - 10
             
-            # Check if it would go off-screen (bottom edge)
             if y + self.height() > screen_geometry.bottom():
                 y = screen_geometry.bottom() - self.height() - 10
             
-            # Ensure it doesn't go off the top or left
             x = max(10, x)
             y = max(10, y)
             

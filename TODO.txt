@@ -1,21 +1,26 @@
 V9:
-1. Problème d'inconsistence avec les styles : la couleur dans les cards semble garder le dernier style sélectionné; même en changeant de style c'est la couleur précédente qui persiste. peut-être à cause d'une inconsistence au niveau des noms de variables.
-Par ailleurs certains noms des variables couleur ne sont pas appropriés, ils désignent des couleurs spécifiques alors même qu'elles sont appelées à changer avec la personnalisation. Il faut trouver un autre dictionnaire de noms pour les thème; peut-être moins parlants (contour1, contour2, fonction1, hover, etc) mais plus cohérents, sinon on se retrouve avec par exemple pour un thème rouge (Bloody Mary) des variables "text_gray_light" ou "light_grey" qui sont en fait remplacées par du vert (je n'ai pas trouvé de correspondance dans l'interface)
+
+1c. A la fin Dark et Light devrait partager les mêmes variables pour tous les éléments, avec seulement des couleurs différentes; donc la partie Style functions (ligne 37) devrait être séparé des styles vers un fichier externe modules/interface.py qui correspondrait à l'interface neutre sans module sélectionné. Chaque module doit amener ses propres paramètres, exemple checkpoint_manager_layout.py comporterait les couleurs neg/pos et les définitions card_border_(green/red)(), checkpoint_label(), def score_label() et def criterion_button_(neutral/green/red)(), le reste concerne l'interface par défaut
+
 
 2. Options > General : ajouter les options "Titre" et "Description" (décochées par défaut) qui permettent d'éditer la zone Title et Description des cards (l'équivalent de checkpointName et criteria dans les grids JSON du mode Checkpoint Manager).
-	Cela induit que par défaut quand aucun module n'est sélectionné, l'export de grid renseigne les paramètres absolutePath, title, description
+	Cela induit que par défaut quand aucun module n'est sélectionné l'export de grid renseigne les paramètres absolutePath, title, description
 
-3. Clic droit sur images :
+3. Options > General > Langues : la définition des langues ne devrait pas être en dur (exemple self.lang_fr = QCheckBox("Français")), ça rend compliqué l'ajout de nouvelles langues. Le nom de la langue elle-même devrait être dans le fichier langue, par exemple 'lang_name': 'Français'
+
+4. Clic droit sur images :
 	- doit refléter les infos disponibles pour les images. Par exemple en mode par défaut (aucun module chargé), on devrait voir l'info 'Title'
 	- avant Size, ajouter la résolution
 	
-4. Nouveau module "Metadata" : Si activé, un paramètre metadata est ajouté aux JSON, avec les sous-paramètres 'type' et 'meta'.
+5. Nouveau module "Metadata" : Si activé, un paramètre metadata est ajouté aux JSON, avec les sous-paramètres 'type' et 'meta'.
 	> Options du module Metadata (cochées par défaut), Type: "EXIF", "IPTC", "XMP"
 	> détection des metadatas à développer plus tard; afficher le contenu
 
-5. Ajouter l'export de la grille d'images en une image unique. Menu> Bouton [ Grid2Img ], avant le bouton Export.
+6. Ajouter l'export de la grille d'images en une image unique. Menu> Bouton [ Grid2Img ], avant le bouton Export.
 	- ouvre une fenêtre> options de textes à ajouter, dépendant des informations disponibles sur les images, en fonction du module ou du JSON chargé. Par exemple en mode checkpoint Manager on récupère les paramètres absolutePath, checkpointName, criteria, totalScore
 	- en gros l'image sera une copie simplifiée de la grille d'images, customisable:
 		- titre
 		- fond uni (blanc par défaut)
 		- espacement des images (10px par défaut)
+		
+7. le log Info doit afficher par défaut le nom du module en cours. Si aucun module alors ne rien afficher. Ne rien changer pour le reste des logs, après avoir affiché les alertes on revient à l'état "module"
