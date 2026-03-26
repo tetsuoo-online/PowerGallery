@@ -8,9 +8,6 @@ V9:
 
 3. Options > General > Langues : la définition des langues ne devrait pas être en dur (exemple self.lang_fr = QCheckBox("Français")), ça rend compliqué l'ajout de nouvelles langues. Le nom de la langue elle-même devrait être dans le fichier langue, par exemple 'lang_name': 'Français'
 
-4. Clic droit sur images :
-	- doit refléter les infos disponibles pour les images. Par exemple en mode par défaut (aucun module chargé), on devrait voir l'info 'Title'
-	- avant Size, ajouter la résolution
 	
 5. Nouveau module "Metadata" : Si activé, un paramètre metadata est ajouté aux JSON, avec les sous-paramètres 'type' et 'meta'.
 	> Options du module Metadata (cochées par défaut), Type: "EXIF", "IPTC", "XMP"
@@ -23,4 +20,3 @@ V9:
 		- fond uni (blanc par défaut)
 		- espacement des images (10px par défaut)
 		
-7. le log Info doit afficher par défaut le nom du module en cours. Si aucun module alors ne rien afficher. Ne rien changer pour le reste des logs, après avoir affiché les alertes on revient à l'état "module"

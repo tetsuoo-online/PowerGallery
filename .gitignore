@@ -1,10 +1,13 @@
+.git/
 __pycache__/
 _grids/
 _temp/
 venv/
+*.ico
 *.pyc
 *.bak
 *- Copie*.py
+Desktop.ini
 README_*
 TODO.txt
 node.zip

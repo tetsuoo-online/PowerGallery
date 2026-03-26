@@ -1,0 +1,33 @@
+v9/
+├── config/
+│   ├── custom_styles/
+│   │   ├── __init__.py
+│   │   ├── BloodyMary_v3.py
+│   │   ├── dark_copy.py
+│   │   ├── light_copy.py
+│   │   └── light_v2.py
+│   ├── lang/
+│   │   ├── __init__.py
+│   │   ├── en.py
+│   │   └── fr.py
+│   ├── __init__.py
+│   ├── options_style.py
+│   ├── settings.json
+│   ├── settings.py
+│   ├── style_editor.py
+│   ├── styles_base_layout.py
+│   ├── styles_dark.py
+│   └── styles_light.py
+├── modules/
+│   ├── __init__.py
+│   ├── checkpoint_manager.py
+│   └── dataset_manager.py
+├── widgets/
+│   ├── __init__.py
+│   └── card_details_dialog.py
+├── .gitignore
+├── INSTALL.BAT
+├── LICENSE
+├── power_gallery.py
+├── pyproject.toml
+└── START.BAT

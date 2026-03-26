@@ -336,20 +336,8 @@ COLORS = {{
             content += f"    '{color_name}': '{color_value}',\n"
         
         content += "}\n\n"
-        
-        # Copy all style functions from base style
-        # Read from the correct base style (dark or light)
-        if self.current_style_name == 'light':
-            base_file = Path(__file__).parent / 'styles_light.py'
-        else:
-            base_file = Path(__file__).parent / 'styles_dark.py'
-        with open(base_file, 'r', encoding='utf-8') as f:
-            base_content = f.read()
-        
-        # Extract functions (everything after COLORS definition)
-        functions_start = base_content.find('\n# Styles as functions')
-        if functions_start > 0:
-            content += base_content[functions_start:]
+        content += "from pathlib import Path as _Path\n"
+        content += "exec((_Path(__file__).parent.parent / 'styles_base_layout.py').read_text(encoding='utf-8'))\n"
         
         # Write to file
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -514,7 +502,7 @@ class StyleEditorDialog(QDialog):
         """Load colors from a style module"""
         try:
             if style_name == 'dark':
-                from config import styles as style_module
+                from config import styles_dark as style_module
             elif style_name == 'light':
                 from config import styles_light as style_module
             else:
@@ -663,17 +651,8 @@ COLORS = {{
             content += f"    '{color_name}': '{color_value}',\n"
         
         content += "}\n\n"
-        
-        # Copy all style functions from base styles.py
-        # Read from dark style as template
-        base_file = Path(__file__).parent / 'styles.py'
-        with open(base_file, 'r', encoding='utf-8') as f:
-            base_content = f.read()
-        
-        # Extract functions (everything after COLORS definition)
-        functions_start = base_content.find('\n# Styles as functions')
-        if functions_start > 0:
-            content += base_content[functions_start:]
+        content += "from pathlib import Path as _Path\n"
+        content += "exec((_Path(__file__).parent.parent / 'styles_base_layout.py').read_text(encoding='utf-8'))\n"
         
         # Write to file
         with open(file_path, 'w', encoding='utf-8') as f:
