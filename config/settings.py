@@ -1,153 +1,167 @@
-# ============================================================================
-# CONFIGURATION MANAGER
-# ============================================================================
+"""
+Settings module — dynamic language discovery.
+Languages are auto-detected from config/lang/*.py files that expose:
+  - lang_name  (str)  : display name, e.g. "Français"
+  - lang_icon  (str, optional) : relative path to flag gif, e.g. "flags/fr.gif"
+  - LANG       (dict) : translation strings
+"""
 
 import json
-import os
+import importlib
+import importlib.util
 from pathlib import Path
 
-# Default settings
-DEFAULT_SETTINGS = {
-    'language': 'fr',  # 'fr' or 'en'
-    'current_style': 'dark',  # Current style: 'dark', 'light', or 'custom_stylename'
-    'import_mode': 'replace',  # 'add' or 'replace'
-    'selected_module': None,  # None or module name (e.g., 'checkpoint_manager')
-    'import_in_tabs': False,  # Import images/grids in new tabs
-    'auto_load_last': False,  # Auto-load last session on startup
-    'last_session': [],  # List of JSON file paths from last session
+_SETTINGS_FILE = Path(__file__).parent / 'settings.json'
+_LANG_DIR = Path(__file__).parent / 'lang'
+
+_DEFAULTS = {
+    'language': 'en',
+    'import_mode': 'replace',
+    'import_in_tabs': False,
+    'auto_load_last': False,
+    'selected_module': None,
+    'current_style': 'dark',
+    'dataset_clear_if_empty': False,
 }
 
-# Path to settings file
-SETTINGS_PATH = Path(__file__).parent / 'settings.json'
 
+# ── Language registry ─────────────────────────────────────────────────────────
+
+def _discover_languages():
+    """
+    Scan config/lang/*.py (excluding __init__.py) and return an ordered dict:
+      { lang_key: {'name': str, 'icon': str|None, 'module': module} }
+    lang_key = filename stem (e.g. 'fr', 'en').
+    """
+    langs = {}
+    if not _LANG_DIR.exists():
+        return langs
+    for path in sorted(_LANG_DIR.glob('*.py')):
+        if path.stem == '__init__':
+            continue
+        key = path.stem
+        spec = importlib.util.spec_from_file_location(f'config.lang.{key}', path)
+        mod = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(mod)
+        except Exception as e:
+            print(f"[settings] Failed to load lang '{key}': {e}")
+            continue
+        if not hasattr(mod, 'LANG'):
+            continue
+        langs[key] = {
+            'name': getattr(mod, 'lang_name', key),
+            'icon': getattr(mod, 'lang_icon', None),
+            'module': mod,
+        }
+    return langs
+
+
+# ── Config class ──────────────────────────────────────────────────────────────
 
 class Config:
     def __init__(self):
-        self.settings = DEFAULT_SETTINGS.copy()
-        self.lang = None
-        self.load_settings()
-        self.load_language()
-    
-    def load_settings(self):
-        """Load settings from JSON file or create with defaults"""
-        if SETTINGS_PATH.exists():
-            try:
-                with open(SETTINGS_PATH, 'r', encoding='utf-8') as f:
-                    loaded = json.load(f)
-                    self.settings.update(loaded)
-            except Exception as e:
-                print(f"Error loading settings: {e}")
-                print("Using default settings")
-        else:
-            self.save_settings()
-    
-    def save_settings(self):
-        """Save current settings to JSON file"""
+        self._data = dict(_DEFAULTS)
+        self._load()
+        self._languages = _discover_languages()
+        lang_key = self._data.get('language', 'en')
+        if lang_key not in self._languages and self._languages:
+            lang_key = next(iter(self._languages))
+            self._data['language'] = lang_key
+        self._current_lang = self._languages.get(lang_key, {}).get('module', None)
+        self._styles = None
+
+    # ── Persistence ───────────────────────────────────────────────────────────
+
+    def _load(self):
         try:
-            with open(SETTINGS_PATH, 'w', encoding='utf-8') as f:
-                json.dump(self.settings, f, indent=4, ensure_ascii=False)
+            if _SETTINGS_FILE.exists():
+                data = json.loads(_SETTINGS_FILE.read_text(encoding='utf-8'))
+                self._data.update(data)
         except Exception as e:
-            print(f"Error saving settings: {e}")
-    
-    def load_language(self):
-        """Load language strings based on current language setting"""
-        lang_code = self.settings.get('language', 'fr')
+            print(f"[settings] Load error: {e}")
+
+    def _save(self):
         try:
-            if lang_code == 'en':
-                from config.lang import en
-                self.lang = en.LANG
-            else:
-                from config.lang import fr
-                self.lang = fr.LANG
+            _SETTINGS_FILE.write_text(
+                json.dumps(self._data, indent=2, ensure_ascii=False), encoding='utf-8')
         except Exception as e:
-            print(f"Error loading language {lang_code}: {e}")
-            # Fallback to French
-            from config.lang import fr
-            self.lang = fr.LANG
-    
-    def set_language(self, lang_code):
-        """Change language and reload strings"""
-        self.settings['language'] = lang_code
-        self.save_settings()
-        self.load_language()
-    
-    def set_theme(self, theme):
-        """Set theme (dark/light)"""
-        self.settings['theme'] = theme
-        self.save_settings()
-    
-    def set_import_mode(self, mode):
-        """Set import mode (add/replace)"""
-        self.settings['import_mode'] = mode
-        self.save_settings()
-    
-    def set_selected_module(self, module_name):
-        """Set selected module (None or module name)"""
-        self.settings['selected_module'] = module_name
-        self.save_settings()
-    
-    def set_import_in_tabs(self, enabled):
-        """Set import in tabs mode"""
-        self.settings['import_in_tabs'] = enabled
-        self.save_settings()
-    
-    def set_auto_load_last(self, enabled):
-        """Set auto-load last session mode"""
-        self.settings['auto_load_last'] = enabled
-        self.save_settings()
-    
-    def save_last_session(self, json_paths):
-        """Save list of JSON paths for last session"""
-        self.settings['last_session'] = json_paths[:26]  # Max 26 tabs
-        self.save_settings()
-    
-    def get_last_session(self):
-        """Get last session JSON paths"""
-        return self.settings.get('last_session', [])
-    
-    def get(self, key):
-        """Get a setting value"""
-        return self.settings.get(key)
-    
+            print(f"[settings] Save error: {e}")
+
+    # ── Generic get/set ───────────────────────────────────────────────────────
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
     def set(self, key, value):
-        """Set a generic setting value"""
-        self.settings[key] = value
-        self.save_settings()
-    
+        self._data[key] = value
+        self._save()
+
+    # ── Language ──────────────────────────────────────────────────────────────
+
+    def get_languages(self):
+        """Return the language registry dict."""
+        return self._languages
+
+    def set_language(self, lang_key):
+        if lang_key in self._languages:
+            self._data['language'] = lang_key
+            self._current_lang = self._languages[lang_key]['module']
+            self._save()
+
     def get_text(self, key):
-        """Get a language string"""
-        return self.lang.get(key, key)
-    
+        if self._current_lang and hasattr(self._current_lang, 'LANG'):
+            return self._current_lang.LANG.get(key, key)
+        return key
+
+    # ── Style ─────────────────────────────────────────────────────────────────
+
     def get_styles(self):
-        """Get the appropriate styles module based on current_style setting"""
-        style_name = self.settings.get('current_style', 'dark')
-        
-        # Handle built-in styles
-        if style_name == 'dark':
-            from config import styles_dark
-            return styles_dark
-        elif style_name == 'light':
-            from config import styles_light
-            return styles_light
-        else:
-            # Handle custom styles
-            try:
-                # Custom styles are in config/custom_styles/
-                custom_module = __import__(f'config.custom_styles.{style_name}', fromlist=[style_name])
-                return custom_module
-            except ImportError:
-                # Fallback to dark if custom style not found
-                from config import styles_dark
-                return styles_dark
-    
+        if self._styles is None:
+            self._reload_styles()
+        return self._styles
+
+    def _reload_styles(self):
+        style_name = self._data.get('current_style', 'dark')
+        try:
+            if style_name == 'dark':
+                import config.styles_dark as mod
+            elif style_name == 'light':
+                import config.styles_light as mod
+            else:
+                mod = importlib.import_module(f'config.custom_styles.{style_name}')
+            self._styles = mod
+        except Exception as e:
+            print(f"[settings] Style load error '{style_name}': {e}")
+            import config.styles_dark as mod
+            self._styles = mod
+
     def set_current_style(self, style_name):
-        """Set current style"""
-        self.settings['current_style'] = style_name
-        # Also update theme for backward compatibility
-        if style_name in ['dark', 'light']:
-            self.settings['theme'] = style_name
-        self.save_settings()
+        self._data['current_style'] = style_name
+        self._styles = None  # force reload on next get_styles()
+        self._save()
+
+    # ── Convenience setters ───────────────────────────────────────────────────
+
+    def set_import_mode(self, mode):
+        self.set('import_mode', mode)
+
+    def set_import_in_tabs(self, value):
+        self.set('import_in_tabs', value)
+
+    def set_auto_load_last(self, value):
+        self.set('auto_load_last', value)
+
+    def set_selected_module(self, module_key):
+        self.set('selected_module', module_key)
+
+    # ── Last session ──────────────────────────────────────────────────────────
+
+    def save_last_session(self, paths):
+        self.set('last_session', paths)
+
+    def get_last_session(self):
+        return self._data.get('last_session', [])
 
 
-# Global config instance
 config = Config()

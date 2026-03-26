@@ -1,3 +1,6 @@
+lang_name = "Français"
+lang_icon = "flags/fr.gif"
+
 LANG = {
     'window_title': 'Power Gallery V9',
     'btn_options': '⚙️ Options',

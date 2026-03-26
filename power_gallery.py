@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QGridLayout, QFrame, QDialog, QComboBox, QLayout, QSizePolicy,
                              QCheckBox, QGroupBox)
 from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize
-from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen
+from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon
 
 from config.settings import config
 from widgets import CardDetailsDialog
@@ -75,15 +75,22 @@ class OptionsDialog(QDialog):
         layout = QVBoxLayout()
 
         lang_group = QGroupBox(config.get_text('options_language'))
-        lang_layout = QHBoxLayout()
-        self.lang_fr = QCheckBox("Français")
-        self.lang_en = QCheckBox("English")
-        (self.lang_fr if config.get('language') == 'fr' else self.lang_en).setChecked(True)
-        self.lang_fr.toggled.connect(lambda c: self.lang_en.setChecked(not c) if c else None)
-        self.lang_en.toggled.connect(lambda c: self.lang_fr.setChecked(not c) if c else None)
-        lang_layout.addWidget(self.lang_fr)
-        lang_layout.addWidget(self.lang_en)
-        lang_layout.addStretch()
+        lang_layout = QVBoxLayout()
+
+        from PyQt6.QtWidgets import QListWidget, QListWidgetItem
+        self.lang_list = QListWidget()
+        self.lang_list.setIconSize(QSize(24, 16))
+        self.lang_list.setFixedHeight(120)
+        self.lang_list.setSpacing(2)
+
+        current_lang = config.get('language')
+        for lang_key, lang_info in config.get_languages().items():
+            item = self._build_lang_list_item(lang_key, lang_info)
+            self.lang_list.addItem(item)
+            if lang_key == current_lang:
+                self.lang_list.setCurrentItem(item)
+
+        lang_layout.addWidget(self.lang_list)
         lang_group.setLayout(lang_layout)
 
         import_group = QGroupBox(config.get_text('options_import_mode'))
@@ -110,6 +117,23 @@ class OptionsDialog(QDialog):
         layout.addStretch()
         tab.setLayout(layout)
         return tab
+
+    @staticmethod
+    def _build_lang_list_item(lang_key, lang_info):
+        from PyQt6.QtWidgets import QListWidgetItem
+        from pathlib import Path as _Path
+        item = QListWidgetItem(lang_info['name'])
+        item.setData(Qt.ItemDataRole.UserRole, lang_key)
+        icon_rel = lang_info.get('icon')
+        icon_path = (_Path(__file__).parent / 'config' / 'lang' / icon_rel
+                     if icon_rel else None)
+        if icon_path and icon_path.exists():
+            item.setIcon(QIcon(str(icon_path)))
+        else:
+            placeholder = QPixmap(24, 16)
+            placeholder.fill(Qt.GlobalColor.transparent)
+            item.setIcon(QIcon(placeholder))
+        return item
 
     def create_personalization_tab(self):
         from config.style_editor import StyleEditorWidget
@@ -172,7 +196,9 @@ class OptionsDialog(QDialog):
         return tab
 
     def save_and_close(self):
-        config.set_language('fr' if self.lang_fr.isChecked() else 'en')
+        selected_lang_item = self.lang_list.currentItem()
+        if selected_lang_item:
+            config.set_language(selected_lang_item.data(Qt.ItemDataRole.UserRole))
         config.set_import_mode('replace' if self.import_replace.isChecked() else 'add')
         config.set_import_in_tabs(self.import_in_tabs.isChecked())
         config.set_auto_load_last(self.auto_load_last.isChecked())
