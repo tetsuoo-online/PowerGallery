@@ -2,6 +2,8 @@
 
 A desktop application for visually comparing and evaluating AI-generated images, built with Python and PyQt6.
 
+![alt text](assets/2026-03-27_09_52_07-PowerGallery_V9.webp)
+
 ![Python](https://img.shields.io/badge/Python-3.10+-blue) ![PyQt6](https://img.shields.io/badge/PyQt6-6.x-green) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 
 ---
@@ -63,10 +65,13 @@ START.BAT
 ---
 
 ## Screenshots
+![alt text](assets/options.webp) So many languages ! ^^
 
-<img width="625" height="275" alt="Image" src="https://github.com/user-attachments/assets/6b005993-4e79-4f46-87c5-0c499562a92e" /> So many languages ! ^^
+![alt text](assets/2026-03-27_08_56_34-PowerGallery_V9.webp)
 
-![alt text](image.png)
+![alt text](assets/style_editor.webp)
+
+![alt text](assets/FullscreenView_1.webp)
 
 ---
 
