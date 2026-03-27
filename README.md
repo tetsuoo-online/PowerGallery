@@ -108,4 +108,4 @@ v9/
 
 ## 👤 Author : *Tetsuoo*
 
-## 🙏 Credits : - **Claude AI ❤** - AI assistant extraordinaire
+## 🙏 Credits : *Claude AI ❤ - AI assistant extraordinaire*
