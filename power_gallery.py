@@ -76,10 +76,15 @@ class OptionsDialog(QDialog):
 
         lang_group = QGroupBox(config.get_text('options_language'))
         lang_layout = QVBoxLayout()
+        lang_layout.setContentsMargins(12, 12, 12, 12)
 
         self.lang_list = QListWidget()
+        self.lang_list.setViewMode(QListWidget.ViewMode.IconMode)
+        self.lang_list.setResizeMode(QListWidget.ResizeMode.Adjust)
+        self.lang_list.setMovement(QListWidget.Movement.Static)
         self.lang_list.setIconSize(QSize(24, 16))
-        self.lang_list.setFixedHeight(120)
+        self.lang_list.setGridSize(QSize(100, 40))
+        self.lang_list.setFixedHeight(84)
         self.lang_list.setSpacing(2)
 
         current_lang = config.get('language')
@@ -91,6 +96,7 @@ class OptionsDialog(QDialog):
 
         lang_layout.addWidget(self.lang_list)
         lang_group.setLayout(lang_layout)
+        lang_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         import_group = QGroupBox(config.get_text('options_import_mode'))
         import_layout = QHBoxLayout()
@@ -328,11 +334,10 @@ class ImageCard(QFrame):
     def apply_styles(self):
         self.close_btn.setStyleSheet(get_styles().close_button())
         self._apply_container_bg()
+        self.setStyleSheet(get_styles().card_style())
         module = self.get_active_module()
         if module and hasattr(module, 'apply_card_styles'):
             module.apply_card_styles(self)
-        else:
-            self.setStyleSheet(get_styles().card_style())
 
     def delete_card(self):
         grid_tab = self.find_grid_tab()
