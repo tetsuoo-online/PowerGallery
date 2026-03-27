@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                              QScrollArea, QTabWidget, QSlider, QLineEdit, QTextEdit,
                              QGridLayout, QFrame, QDialog, QComboBox, QLayout, QSizePolicy,
-                             QCheckBox, QGroupBox, QListWidget, QListWidgetItem)
+                             QCheckBox, QGroupBox, QListWidget, QListWidgetItem, QStackedWidget)
 from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon
 
@@ -486,12 +486,18 @@ class GridTab(QWidget):
         controls2 = QHBoxLayout()
         self.controls2_widget = QWidget()
         self.controls2_widget.setLayout(controls2)
+        self.controls2_widget.setFixedHeight(36)
 
         log_label = QLabel("ℹ️ Info :")
         log_label.setStyleSheet("font-weight: bold;")
         self.log_label = QLabel("")
         self.log_label.setStyleSheet(f"color: {get_styles().COLORS['text2']};")
         self.log_label.setMinimumWidth(300)
+        self._hover_label = QLabel("")
+        self._hover_label.setMinimumWidth(300)
+        self._log_stack = QStackedWidget()
+        self._log_stack.addWidget(self.log_label)    # index 0 — état normal
+        self._log_stack.addWidget(self._hover_label) # index 1 — survol bouton
         self.size_label = QLabel(config.get_text('slider_label') + ":")
         self.size_slider = QSlider(Qt.Orientation.Horizontal)
         self.size_slider.setMinimum(210)
@@ -501,7 +507,7 @@ class GridTab(QWidget):
         self.size_slider.sliderReleased.connect(self.on_slider_released)
 
         controls2.addWidget(log_label)
-        controls2.addWidget(self.log_label)
+        controls2.addWidget(self._log_stack)
         controls2.addStretch()
         controls2.addWidget(self.size_label)
         controls2.addWidget(self.size_slider)
@@ -533,6 +539,13 @@ class GridTab(QWidget):
         main_layout.addWidget(self.drop_zone)
         main_layout.addWidget(self.scroll_area)
         self.setLayout(main_layout)
+
+        self._install_hover(self.close_tab_btn, 'hover_close_tab', 'accent')
+        self._install_hover(self.clear_btn,     'hover_clear_tab', 'danger')
+
+    def _install_hover(self, button, text_key, color_key):
+        button.enterEvent = lambda e, k=text_key, c=color_key: self._show_hover(k, c)
+        button.leaveEvent = lambda e: self._hide_hover()
 
     # ── Module dropdown ───────────────────────────────────────────────────────
 
@@ -591,6 +604,15 @@ class GridTab(QWidget):
         self.update_module_dropdown()
 
     # ── Logging ───────────────────────────────────────────────────────────────
+
+    def _show_hover(self, text_key, color_key):
+        color = get_styles().COLORS.get(color_key, get_styles().COLORS['accent'])
+        self._hover_label.setText(config.get_text(text_key))
+        self._hover_label.setStyleSheet(f"color: {color}; font-weight: bold;")
+        self._log_stack.setCurrentIndex(1)
+
+    def _hide_hover(self):
+        self._log_stack.setCurrentIndex(0)
 
     def _get_module_name(self):
         module_name = config.get('selected_module')
@@ -1312,11 +1334,15 @@ class MainWindow(QMainWindow):
         self.add_tab_btn.setFixedSize(30, 30)
         self.add_tab_btn.setStyleSheet(get_styles().add_tab_button())
         self.add_tab_btn.clicked.connect(self.add_tab)
+        self.add_tab_btn.enterEvent = lambda e: self._tab_btn_hover('hover_add_tab', 'accent')
+        self.add_tab_btn.leaveEvent  = lambda e: self._tab_btn_hover_end()
 
         self.remove_all_btn = QPushButton("-")
         self.remove_all_btn.setFixedSize(30, 30)
         self.remove_all_btn.setStyleSheet(get_styles().remove_tab_button())
         self.remove_all_btn.clicked.connect(self.remove_all_tabs)
+        self.remove_all_btn.enterEvent = lambda e: self._tab_btn_hover('hover_remove_tabs', 'danger')
+        self.remove_all_btn.leaveEvent  = lambda e: self._tab_btn_hover_end()
 
         button_layout.addWidget(self.add_tab_btn)
         button_layout.addWidget(self.remove_all_btn)
@@ -1332,6 +1358,16 @@ class MainWindow(QMainWindow):
             self.add_tab()
 
     # ── Session helpers ───────────────────────────────────────────────────────
+
+    def _tab_btn_hover(self, text_key, color_key):
+        tab = self.tabs.currentWidget()
+        if isinstance(tab, GridTab):
+            tab._show_hover(text_key, color_key)
+
+    def _tab_btn_hover_end(self):
+        tab = self.tabs.currentWidget()
+        if isinstance(tab, GridTab):
+            tab._hide_hover()
 
     def _collect_session_paths(self):
         """Return list of last_imported_json paths across all tabs (deduped, ordered)."""

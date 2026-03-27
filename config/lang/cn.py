@@ -98,4 +98,9 @@ LANG = {
 'dataset_action_add_tag': '添加标签 (+)',
 'dataset_action_replace_tag': '替换标签 (♻️)',
 'dataset_clear_if_empty': '为空时删除 TXT',
+# Hover hints
+'hover_close_tab': '关闭此标签页',
+'hover_add_tab': '添加标签页',
+'hover_remove_tabs': '删除所有标签页',
+'hover_clear_tab': '清空所有卡片',
 }

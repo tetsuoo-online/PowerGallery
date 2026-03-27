@@ -97,4 +97,10 @@ LANG = {
     'dataset_action_add_tag': 'Tag hinzufügen (+)',
     'dataset_action_replace_tag': 'Tag ersetzen (♻️)',
     'dataset_clear_if_empty': 'TXT löschen wenn leer',
+# Hover hints
+'hover_close_tab': 'iesen Tab schließen',
+'hover_add_tab': 'Tab hinzufügen',
+'hover_remove_tabs': 'Alle Tabs entfernen',
+'hover_clear_tab': 'Alle Karten leeren
+',
 }

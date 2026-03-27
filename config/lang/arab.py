@@ -98,4 +98,9 @@ LANG = {
 'dataset_action_add_tag': 'إضافة وسم (+)',
 'dataset_action_replace_tag': 'استبدال وسم (♻️)',
 'dataset_clear_if_empty': 'حذف TXT إذا كان فارغاً',
+# Hover hints
+'hover_close_tab': 'إغلاق هذا التبويب',
+'hover_add_tab': 'إضافة تبويب',
+'hover_remove_tabs': 'حذف جميع التبويبات',
+'hover_clear_tab': 'مسح جميع البطاقات',
 }

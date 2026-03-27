@@ -100,4 +100,9 @@ LANG = {
     'dataset_action_add_tag': 'Ajout de Tag (+)',
     'dataset_action_replace_tag': 'Remplacement de Tag (♻️)',
     'dataset_clear_if_empty': 'Effacer TXT si vide',
+    # Hover hints
+    'hover_close_tab': 'Fermer cet onglet',
+    'hover_add_tab': 'Ajouter un onglet',
+    'hover_remove_tabs': 'Supprimer tous les onglets',
+    'hover_clear_tab': 'Vider toutes les cartes',
 }

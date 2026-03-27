@@ -98,4 +98,9 @@ LANG = {
 'dataset_action_add_tag': 'タグを追加 (+)',
 'dataset_action_replace_tag': 'タグを置換 (♻️)',
 'dataset_clear_if_empty': '空の場合TXTを削除',
+# Hover hints
+'hover_close_tab': 'このタブを閉じる',
+'hover_add_tab': 'タブを追加',
+'hover_remove_tabs': 'すべてのタブを削除',
+'hover_clear_tab': 'すべてのカードをクリア',
 }

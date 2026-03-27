@@ -97,4 +97,9 @@ LANG = {
     'dataset_action_add_tag': 'Añadir etiqueta (+)',
     'dataset_action_replace_tag': 'Reemplazar etiqueta (♻️)',
     'dataset_clear_if_empty': 'Eliminar TXT si vacío',
+# Hover hints
+'hover_close_tab': 'Cerrar esta pestaña',
+'hover_add_tab': 'Añadir una pestaña',
+'hover_remove_tabs': 'Eliminar todas las pestañas',
+'hover_clear_tab': 'Vaciar todas las cartas',
 }
