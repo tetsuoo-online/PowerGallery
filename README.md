@@ -8,7 +8,7 @@ A desktop application for visually comparing and evaluating AI-generated images,
 
 ## What it does
 
-Power Gallery lets you load batches of images into a grid, compare them side by side, and evaluate them using structured criteria. It was designed for AI image generation workflows — particularly for comparing outputs from different Stable Diffusion checkpoints.
+Power Gallery lets you load batches of images into a grid, compare them side by side, and evaluate them using structured criteria. At first it was designed for AI image generation workflows — particularly for comparing outputs from different Stable Diffusion checkpoints; now you can also use the grid as a DATASET EDITOR (for LoRA training).
 
 **Key features:**
 
@@ -16,12 +16,12 @@ Power Gallery lets you load batches of images into a grid, compare them side by 
 - **Drag & drop** — load images or JSON session files directly into the app
 - **Fullscreen comparison** — view any image full screen; drag a split handle to compare two images from different tabs side by side
 - **Modules** — switch between evaluation modes:
-  - *Checkpoint Manager* — rate images against named criteria (beauty, errors, LoRAs, prompts…), auto-score per image
+  - *Checkpoint Manager* — rate images against named criteria (beauty, errors, LoRAs, prompts…), score each criterion manually as positive, neutral, or negative
   - *Dataset Manager* — view and edit the `.txt` caption file associated with each image; batch add or replace tags
 - **Resizable grid** — use the slider or Ctrl+scroll to zoom cards in/out
 - **Session save/load** — export your grid to JSON and reload it later, including all ratings
 - **Style editor** — customize the app's color theme with a visual editor, duplicate or delete custom themes
-- **Multi-language** — UI available in English, French, German, and Spanish
+- **Multi-language** — UI available in English, French, German, Spanish but also Arabic, Chinese, Japanese and Brazilian Portuguese. Because why not ! haha
 
 ---
 
@@ -72,6 +72,13 @@ v9/
 ├── widgets/         # Card detail dialog
 └── power_gallery.py # Main entry point
 ```
+
+---
+
+## TODO
+
+- add metadata reading
+- export the grid in a single image, all customizable
 
 ---
 
