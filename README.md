@@ -45,9 +45,10 @@ START.BAT
 
 1. Launch the app
 2. Drag images (`.png`, `.jpg`, `.jpeg`, `.webp`) or a saved `.json` session onto the drop zone
-3. Click any image to open the fullscreen viewer; right-click for details
-4. Use **Options** to choose a module, language, and import behavior
-5. Use **Export** to save your grid as a JSON file for later
+3. Drag & drop between cards to change their order (a “push”, not a swap).
+4. Click any image to open the fullscreen viewer; right-click for details
+5. Use **Options** to choose a module, language, and import behavior
+6. Use **Export** to save your grid as a JSON file for later
 
 ---
 
@@ -65,15 +66,25 @@ START.BAT
 ---
 
 ## Screenshots
-![alt text](assets/Options.webp) So many languages ! ^^
+ *- So many languages ! ^^ -*</br>
+![alt text](assets/Options.webp)</br> 
 
-![alt text](assets/2026-03-27_08_56_34-PowerGallery_V9.webp)
+ *- Checkpoint compare mode -*</br>
+![alt text](assets/2026-03-27_08_56_34-PowerGallery_V9.webp)</br>
 
-![alt text](assets/style_editor.webp)
+ *- Fun with style editor -*</br>
+![alt text](assets/style_editor.webp)</br>
 
-![alt text](assets/FullscreenView_1.webp)
+ *- Comparing images -*</br>
+![alt text](assets/FullscreenView_1.webp)</br>
 
----
+
+## 💡 Notes
+
+✅ Duplicate images are automatically ignored</br>
+🔄 Checkpoint names update automatically</br>
+⏱️ Long press to drag, quick tap for fullscreen</br>
+🔒 The first tab cannot be deleted</br>
 
 ## Project structure
 
@@ -86,8 +97,6 @@ v9/
 └── power_gallery.py # Main entry point
 ```
 
----
-
 ## TODO
 
 - add metadata reading
@@ -95,18 +104,8 @@ v9/
 
 ---
 
-## License
+## License : See `LICENSE`.
 
-See `LICENSE`.
+## 👤 Author : *Tetsuoo*
 
----
-
-## 👤 Author
-
-**Tetsuoo**
-
----
-
-## 🙏 Credits
-
-- **Claude AI ❤** - AI assistant extraordinaire
+## 🙏 Credits : - **Claude AI ❤** - AI assistant extraordinaire
