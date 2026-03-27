@@ -1,10 +1,10 @@
 {
-  "language": "fr",
+  "language": "en",
   "import_mode": "replace",
   "import_in_tabs": false,
   "auto_load_last": true,
   "selected_module": "dataset",
-  "current_style": "BloodyMary_v3",
+  "current_style": "light_v3",
   "dataset_clear_if_empty": true,
   "last_session": [
     "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-A_20260325-054535_Anima_Dataset.json",

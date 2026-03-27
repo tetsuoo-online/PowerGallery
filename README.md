@@ -62,6 +62,14 @@ START.BAT
 
 ---
 
+## Screenshots
+
+<img width="625" height="275" alt="Image" src="https://github.com/user-attachments/assets/6b005993-4e79-4f46-87c5-0c499562a92e" /> So many languages ! ^^
+
+![alt text](image.png)
+
+---
+
 ## Project structure
 
 ```
@@ -85,3 +93,15 @@ v9/
 ## License
 
 See `LICENSE`.
+
+---
+
+## 👤 Author
+
+**Tetsuoo**
+
+---
+
+## 🙏 Credits
+
+- **Claude AI ❤** - AI assistant extraordinaire
