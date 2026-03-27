@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                              QScrollArea, QTabWidget, QSlider, QLineEdit, QTextEdit,
                              QGridLayout, QFrame, QDialog, QComboBox, QLayout, QSizePolicy,
-                             QCheckBox, QGroupBox)
+                             QCheckBox, QGroupBox, QListWidget, QListWidgetItem)
 from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon
 
@@ -59,9 +59,9 @@ class OptionsDialog(QDialog):
 
         main_layout = QVBoxLayout()
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.create_general_tab(), "General")
-        self.tabs.addTab(self.create_personalization_tab(), "Personnalisation")
-        self.tabs.addTab(self.create_modules_tab(), "Modules")
+        self.tabs.addTab(self.create_general_tab(), config.get_text('options_tab_general'))
+        self.tabs.addTab(self.create_personalization_tab(), config.get_text('options_tab_style'))
+        self.tabs.addTab(self.create_modules_tab(), config.get_text('options_tab_modules'))
 
         close_btn = QPushButton(config.get_text('options_close'))
         close_btn.clicked.connect(self.save_and_close)
@@ -77,7 +77,6 @@ class OptionsDialog(QDialog):
         lang_group = QGroupBox(config.get_text('options_language'))
         lang_layout = QVBoxLayout()
 
-        from PyQt6.QtWidgets import QListWidget, QListWidgetItem
         self.lang_list = QListWidget()
         self.lang_list.setIconSize(QSize(24, 16))
         self.lang_list.setFixedHeight(120)
@@ -105,9 +104,9 @@ class OptionsDialog(QDialog):
         import_layout.addStretch()
         import_group.setLayout(import_layout)
 
-        self.import_in_tabs = QCheckBox("Import in Tabs")
+        self.import_in_tabs = QCheckBox(config.get_text('options_import_in_tabs'))
         self.import_in_tabs.setChecked(config.get('import_in_tabs'))
-        self.auto_load_last = QCheckBox("Auto-load last session")
+        self.auto_load_last = QCheckBox(config.get_text('options_auto_load_last'))
         self.auto_load_last.setChecked(config.get('auto_load_last'))
 
         layout.addWidget(lang_group)
@@ -117,23 +116,6 @@ class OptionsDialog(QDialog):
         layout.addStretch()
         tab.setLayout(layout)
         return tab
-
-    @staticmethod
-    def _build_lang_list_item(lang_key, lang_info):
-        from PyQt6.QtWidgets import QListWidgetItem
-        from pathlib import Path as _Path
-        item = QListWidgetItem(lang_info['name'])
-        item.setData(Qt.ItemDataRole.UserRole, lang_key)
-        icon_rel = lang_info.get('icon')
-        icon_path = (_Path(__file__).parent / 'config' / 'lang' / icon_rel
-                     if icon_rel else None)
-        if icon_path and icon_path.exists():
-            item.setIcon(QIcon(str(icon_path)))
-        else:
-            placeholder = QPixmap(24, 16)
-            placeholder.fill(Qt.GlobalColor.transparent)
-            item.setIcon(QIcon(placeholder))
-        return item
 
     def create_personalization_tab(self):
         from config.style_editor import StyleEditorWidget
@@ -153,7 +135,7 @@ class OptionsDialog(QDialog):
         self.module_checkboxes = {}   # key → QCheckBox
         self.module_settings_widgets = []  # widgets with .save()
 
-        self.module_none = QCheckBox("Aucun module")
+        self.module_none = QCheckBox(config.get_text('options_module_none'))
         self.module_none.setChecked(current_module is None)
         layout.addWidget(self.module_none)
 
@@ -194,6 +176,22 @@ class OptionsDialog(QDialog):
         layout.addStretch()
         tab.setLayout(layout)
         return tab
+
+    @staticmethod
+    def _build_lang_list_item(lang_key, lang_info):
+        from pathlib import Path as _Path
+        item = QListWidgetItem(lang_info['name'])
+        item.setData(Qt.ItemDataRole.UserRole, lang_key)
+        icon_rel = lang_info.get('icon')
+        icon_path = (_Path(__file__).parent / 'config' / 'lang' / icon_rel
+                     if icon_rel else None)
+        if icon_path and icon_path.exists():
+            item.setIcon(QIcon(str(icon_path)))
+        else:
+            placeholder = QPixmap(24, 16)
+            placeholder.fill(Qt.GlobalColor.transparent)
+            item.setIcon(QIcon(placeholder))
+        return item
 
     def save_and_close(self):
         selected_lang_item = self.lang_list.currentItem()
@@ -535,7 +533,7 @@ class GridTab(QWidget):
             module = MODULE_REGISTRY[module_name]
             options = module.get_dropdown_options() if hasattr(module, 'get_dropdown_options') else []
             if options:
-                self.module_dropdown.addItem("-- Select action --")
+                self.module_dropdown.addItem(config.get_text('dropdown_select_action'))
                 for key in options:
                     label = config.get_text(key) if key.startswith('dataset_action') else key
                     self.module_dropdown.addItem(label, userData=key)
@@ -543,14 +541,14 @@ class GridTab(QWidget):
                 name = module.get_module_name() if hasattr(module, 'get_module_name') else module_name
                 self.module_dropdown.addItem(f"< {name} >")
         else:
-            self.module_dropdown.addItem("< no module >")
+            self.module_dropdown.addItem(config.get_text('dropdown_no_module'))
         self.module_dropdown.setCurrentIndex(0)
 
     def on_module_action_selected(self, index):
         if index <= 0:
             return
         text = self.module_dropdown.currentText()
-        if text in ("< no module >", "-- Select action --"):
+        if text in (config.get_text('dropdown_no_module'), config.get_text('dropdown_select_action')):
             return
 
         module_name = config.get('selected_module')
@@ -661,7 +659,7 @@ class GridTab(QWidget):
 
         if json_files:
             if len(json_files) > 1:
-                self.log("⚠️ Multiple JSON files detected. Importing only the first one.")
+                self.log(config.get_text('msg_multiple_json'))
             self._route_import_json(json_files[0], should_new_tab)
         elif files:
             self._route_load_images(files, should_new_tab)
@@ -670,9 +668,8 @@ class GridTab(QWidget):
 
     def drop_zone_click(self, event):
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Select Images or JSON", "",
-            "Images and JSON (*.png *.jpg *.jpeg *.webp *.json);;"
-            "Images (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;All Files (*.*)")
+            self, config.get_text('dialog_open_images_json'), "",
+            config.get_text('file_filter_images_json'))
         if not files:
             return
         image_files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
@@ -681,7 +678,7 @@ class GridTab(QWidget):
 
         if json_files:
             if len(json_files) > 1:
-                self.log("⚠️ Multiple JSON files selected. Importing only the first one.")
+                self.log(config.get_text('msg_multiple_json'))
             self._route_import_json(json_files[0], should_new_tab)
         elif image_files:
             self._route_load_images(image_files, should_new_tab)
@@ -721,7 +718,7 @@ class GridTab(QWidget):
                 tab_widget.removeTab(idx)
                 self.deleteLater()
         else:
-            self.log_label.setText("Can't delete the first tab")
+            self.log_label.setText(config.get_text('msg_cant_delete_last_tab'))
             self.log_label.setStyleSheet("color: yellow; font-weight: bold;")
             QTimer.singleShot(3000, self.safe_clear_log)
         if tab_widget and tab_widget.count() == 1:
@@ -746,7 +743,7 @@ class GridTab(QWidget):
                 module.update_card_name(card, new_name)
                 updated += 1
         if updated:
-            self.log(f"Updated {updated} card name(s)")
+            self.log(config.get_text('msg_updated_names').format(n=updated))
 
     # ── Card management ───────────────────────────────────────────────────────
 
@@ -771,12 +768,12 @@ class GridTab(QWidget):
         self.refresh_grid()
         total = len(self.cards)
         if new_images:
-            self.log(f"Loaded {new_images} new images",
+            self.log(config.get_text('msg_loaded_images').format(n=new_images),
                      lambda: self.show_info_persistent(f"{total} images"))
         if duplicates:
-            self.log(f"Skipped {duplicates} duplicate(s)")
+            self.log(config.get_text('msg_skipped_duplicates').format(n=duplicates))
         if not new_images and not duplicates:
-            self.log("No images to load")
+            self.log(config.get_text('msg_no_images_to_load'))
 
     def refresh_grid(self):
         while self.grid_layout.count():
@@ -932,7 +929,7 @@ class GridTab(QWidget):
             self.save_to_last_session(file_path)
 
         except Exception as e:
-            self.log(f"Import error: {str(e)}")
+            self.log(config.get_text('msg_import_error').format(e=str(e)))
 
     def import_grid(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -992,7 +989,7 @@ class GridTab(QWidget):
             self.cards.append(card)
 
         self.refresh_grid()
-        self.log(f"Refreshed {len(self.cards)} cards")
+        self.log(config.get_text('msg_refreshed_cards').format(n=len(self.cards)))
 
     # ── UI helpers ────────────────────────────────────────────────────────────
 
@@ -1005,6 +1002,7 @@ class GridTab(QWidget):
         self.drop_zone.setText(config.get_text('drop_zone_text'))
         self.update_module_dropdown()
         self._set_idle()
+        self.refresh_cards()
 
     def get_tab_widget(self):
         parent = self.parent()
@@ -1080,7 +1078,8 @@ class FullscreenViewer(QWidget):
             for i in range(main_window.tabs.count()):
                 tab_name = main_window.tabs.tabText(i)
                 self.grid_combo.addItem(
-                    f"{tab_name} (current)" if i == current_tab_index else tab_name, i)
+                    config.get_text('fullscreen_tab_current').format(name=tab_name)
+                    if i == current_tab_index else tab_name, i)
             for idx in range(self.grid_combo.count()):
                 if self.grid_combo.itemData(idx) == current_tab_index:
                     self.grid_combo.setCurrentIndex(idx)
@@ -1345,7 +1344,7 @@ class MainWindow(QMainWindow):
         else:
             tab = self.tabs.widget(index)
             if hasattr(tab, 'log'):
-                tab.log("Can't delete the last tab")
+                tab.log(config.get_text('msg_cant_delete_last_tab'))
         if self.tabs.count() == 1:
             self.tabs.setTabText(0, "A")
 

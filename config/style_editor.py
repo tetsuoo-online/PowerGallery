@@ -36,7 +36,7 @@ class StyleEditorWidget(QWidget):
         top_section = QHBoxLayout()
         
         # Left: Style list
-        list_group = QGroupBox("Available Styles")
+        list_group = QGroupBox(self.config.get_text('style_available_styles'))
         list_layout = QVBoxLayout()
         
         self.style_list = QListWidget()
@@ -46,20 +46,20 @@ class StyleEditorWidget(QWidget):
         list_group.setLayout(list_layout)
         
         # Right: Actions
-        actions_group = QGroupBox("Actions")
+        actions_group = QGroupBox(self.config.get_text('style_actions'))
         actions_layout = QVBoxLayout()
         
-        self.duplicate_btn = QPushButton("Duplicate Selected")
+        self.duplicate_btn = QPushButton(self.config.get_text('style_duplicate_btn'))
         self.duplicate_btn.clicked.connect(self.duplicate_style)
         
-        self.delete_btn = QPushButton("Delete Custom")
+        self.delete_btn = QPushButton(self.config.get_text('style_delete_btn'))
         self.delete_btn.clicked.connect(self.delete_style)
         self.delete_btn.setEnabled(False)
         
         self.new_name_input = QLineEdit()
-        self.new_name_input.setPlaceholderText("New style name...")
+        self.new_name_input.setPlaceholderText(self.config.get_text('style_new_name_placeholder'))
         
-        actions_layout.addWidget(QLabel("Select a style to duplicate:"))
+        actions_layout.addWidget(QLabel(self.config.get_text('style_select_to_duplicate')))
         actions_layout.addWidget(self.new_name_input)
         actions_layout.addWidget(self.duplicate_btn)
         actions_layout.addWidget(QLabel(""))
@@ -72,7 +72,7 @@ class StyleEditorWidget(QWidget):
         top_section.addWidget(actions_group, 1)
         
         # Bottom section: Color editor
-        editor_group = QGroupBox("Color Editor")
+        editor_group = QGroupBox(self.config.get_text('style_color_editor'))
         editor_layout = QVBoxLayout()
         
         # Scroll area for colors
@@ -99,8 +99,8 @@ class StyleEditorWidget(QWidget):
         self.style_list.clear()
         
         # Built-in styles (read-only)
-        self.style_list.addItem("🔒 dark (built-in)")
-        self.style_list.addItem("🔒 light (built-in)")
+        self.style_list.addItem(f"🔒 dark {self.config.get_text('style_builtin_suffix')}")
+        self.style_list.addItem(f"🔒 light {self.config.get_text('style_builtin_suffix')}")
         
         # Custom styles
         custom_dir = Path(__file__).parent / 'custom_styles'
@@ -185,7 +185,7 @@ class StyleEditorWidget(QWidget):
             self.display_color_editor()
             
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to load style: {e}")
+            QMessageBox.warning(self, "Error", self.config.get_text('style_load_error').format(e=e))
     
     def display_color_editor(self):
         """Display color editor with all colors"""
@@ -227,15 +227,15 @@ class StyleEditorWidget(QWidget):
         if self.current_style_name in ['dark', 'light']:
             QMessageBox.information(
                 self, 
-                "Read-Only Style", 
-                "Built-in styles (dark/light) cannot be modified.\n\nPlease duplicate this style first to create a custom version you can edit."
+                self.config.get_text('style_readonly_title'), 
+                self.config.get_text('style_readonly_msg')
             )
             return
         
         current_color = self.current_colors[color_name]
         qcolor = QColor(current_color)
         
-        color = QColorDialog.getColor(qcolor, self, f"Pick color for {color_name}")
+        color = QColorDialog.getColor(qcolor, self, self.config.get_text('style_pick_color').format(name=color_name))
         
         if color.isValid():
             color_hex = color.name()
@@ -267,21 +267,21 @@ class StyleEditorWidget(QWidget):
         if new_name.lower() in ['dark', 'light']:
             QMessageBox.warning(
                 self, 
-                "Reserved Name", 
-                f"'{new_name}' is a reserved built-in style name.\n\nPlease choose a different name for your custom style."
+                self.config.get_text('style_reserved_title'), 
+                self.config.get_text('style_reserved_msg').format(name=new_name)
             )
             return
         
         # Validate name (alphanumeric + underscore)
         if not new_name.replace('_', '').isalnum():
-            QMessageBox.warning(self, "Warning", "Style name must be alphanumeric (underscores allowed)")
+            QMessageBox.warning(self, "Warning", self.config.get_text('style_invalid_name'))
             return
         
         # Check if already exists
         custom_dir = Path(__file__).parent / 'custom_styles'
         new_file = custom_dir / f'{new_name}.py'
         if new_file.exists():
-            QMessageBox.warning(self, "Warning", f"Style '{new_name}' already exists")
+            QMessageBox.warning(self, "Warning", self.config.get_text('style_already_exists').format(name=new_name))
             return
         
         # Create new style file
@@ -299,13 +299,13 @@ class StyleEditorWidget(QWidget):
         
         # Can't delete built-in styles
         if self.current_style_name in ['dark', 'light']:
-            QMessageBox.warning(self, "Warning", "Cannot delete built-in styles")
+            QMessageBox.warning(self, "Warning", self.config.get_text('style_cannot_delete_builtin'))
             return
         
         reply = QMessageBox.question(
             self, 
-            "Confirm Delete", 
-            f"Delete style '{self.current_style_name}'?",
+            self.config.get_text('style_confirm_delete_title'), 
+            self.config.get_text('style_confirm_delete_msg').format(name=self.current_style_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -317,7 +317,7 @@ class StyleEditorWidget(QWidget):
                 file_to_delete.unlink()
                 self.load_styles_list()
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete: {e}")
+                QMessageBox.critical(self, "Error", self.config.get_text('style_delete_error').format(e=e))
     
     def save_style_to_file(self, style_name, colors):
         """Save a style to a Python file"""
@@ -377,7 +377,7 @@ class StyleEditorDialog(QDialog):
         top_section = QHBoxLayout()
         
         # Left: Style list
-        list_group = QGroupBox("Available Styles")
+        list_group = QGroupBox(self.config.get_text('style_available_styles'))
         list_layout = QVBoxLayout()
         
         self.style_list = QListWidget()
@@ -387,20 +387,20 @@ class StyleEditorDialog(QDialog):
         list_group.setLayout(list_layout)
         
         # Right: Actions
-        actions_group = QGroupBox("Actions")
+        actions_group = QGroupBox(self.config.get_text('style_actions'))
         actions_layout = QVBoxLayout()
         
-        self.duplicate_btn = QPushButton("Duplicate Selected")
+        self.duplicate_btn = QPushButton(self.config.get_text('style_duplicate_btn'))
         self.duplicate_btn.clicked.connect(self.duplicate_style)
         
-        self.delete_btn = QPushButton("Delete Custom")
+        self.delete_btn = QPushButton(self.config.get_text('style_delete_btn'))
         self.delete_btn.clicked.connect(self.delete_style)
         self.delete_btn.setEnabled(False)
         
         self.new_name_input = QLineEdit()
-        self.new_name_input.setPlaceholderText("New style name...")
+        self.new_name_input.setPlaceholderText(self.config.get_text('style_new_name_placeholder'))
         
-        actions_layout.addWidget(QLabel("Select a style to duplicate:"))
+        actions_layout.addWidget(QLabel(self.config.get_text('style_select_to_duplicate')))
         actions_layout.addWidget(self.new_name_input)
         actions_layout.addWidget(self.duplicate_btn)
         actions_layout.addWidget(QLabel(""))
@@ -413,7 +413,7 @@ class StyleEditorDialog(QDialog):
         top_section.addWidget(actions_group, 1)
         
         # Bottom section: Color editor
-        editor_group = QGroupBox("Color Editor")
+        editor_group = QGroupBox(self.config.get_text('style_color_editor'))
         editor_layout = QVBoxLayout()
         
         # Scroll area for colors
@@ -428,7 +428,7 @@ class StyleEditorDialog(QDialog):
         editor_group.setLayout(editor_layout)
         
         # Close button
-        close_btn = QPushButton("Apply and Close")
+        close_btn = QPushButton(self.config.get_text('style_apply_close'))
         close_btn.clicked.connect(self.apply_and_close)
         
         main_layout.addLayout(top_section, 1)
@@ -445,8 +445,8 @@ class StyleEditorDialog(QDialog):
         self.style_list.clear()
         
         # Built-in styles (read-only)
-        self.style_list.addItem("🔒 dark (built-in)")
-        self.style_list.addItem("🔒 light (built-in)")
+        self.style_list.addItem(f"🔒 dark {self.config.get_text('style_builtin_suffix')}")
+        self.style_list.addItem(f"🔒 light {self.config.get_text('style_builtin_suffix')}")
         
         # Custom styles
         custom_dir = Path(__file__).parent / 'custom_styles'
@@ -515,7 +515,7 @@ class StyleEditorDialog(QDialog):
             self.display_color_editor()
             
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to load style: {e}")
+            QMessageBox.warning(self, "Error", self.config.get_text('style_load_error').format(e=e))
     
     def display_color_editor(self):
         """Display color editor with all colors"""
@@ -556,7 +556,7 @@ class StyleEditorDialog(QDialog):
         current_color = self.current_colors[color_name]
         qcolor = QColor(current_color)
         
-        color = QColorDialog.getColor(qcolor, self, f"Pick color for {color_name}")
+        color = QColorDialog.getColor(qcolor, self, self.config.get_text('style_pick_color').format(name=color_name))
         
         if color.isValid():
             color_hex = color.name()
@@ -582,21 +582,21 @@ class StyleEditorDialog(QDialog):
         if new_name.lower() in ['dark', 'light']:
             QMessageBox.warning(
                 self, 
-                "Reserved Name", 
-                f"'{new_name}' is a reserved built-in style name.\n\nPlease choose a different name for your custom style."
+                self.config.get_text('style_reserved_title'), 
+                self.config.get_text('style_reserved_msg').format(name=new_name)
             )
             return
         
         # Validate name (alphanumeric + underscore)
         if not new_name.replace('_', '').isalnum():
-            QMessageBox.warning(self, "Warning", "Style name must be alphanumeric (underscores allowed)")
+            QMessageBox.warning(self, "Warning", self.config.get_text('style_invalid_name'))
             return
         
         # Check if already exists
         custom_dir = Path(__file__).parent / 'custom_styles'
         new_file = custom_dir / f'{new_name}.py'
         if new_file.exists():
-            QMessageBox.warning(self, "Warning", f"Style '{new_name}' already exists")
+            QMessageBox.warning(self, "Warning", self.config.get_text('style_already_exists').format(name=new_name))
             return
         
         # Create new style file
@@ -614,13 +614,13 @@ class StyleEditorDialog(QDialog):
         
         # Can't delete built-in styles
         if self.current_style_name in ['dark', 'light']:
-            QMessageBox.warning(self, "Warning", "Cannot delete built-in styles")
+            QMessageBox.warning(self, "Warning", self.config.get_text('style_cannot_delete_builtin'))
             return
         
         reply = QMessageBox.question(
             self, 
-            "Confirm Delete", 
-            f"Delete style '{self.current_style_name}'?",
+            self.config.get_text('style_confirm_delete_title'), 
+            self.config.get_text('style_confirm_delete_msg').format(name=self.current_style_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -632,7 +632,7 @@ class StyleEditorDialog(QDialog):
                 file_to_delete.unlink()
                 self.load_styles_list()
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete: {e}")
+                QMessageBox.critical(self, "Error", self.config.get_text('style_delete_error').format(e=e))
     
     def save_style_to_file(self, style_name, colors):
         """Save a style to a Python file"""

@@ -239,7 +239,7 @@ class DatasetManager:
     def build_card_bottom(card):
         txt_edit = QTextEdit()
         txt_edit.setFixedHeight(80)
-        txt_edit.setPlaceholderText("No .txt file found")
+        txt_edit.setPlaceholderText(_get_config().get_text('dataset_no_txt'))
         txt_edit.setStyleSheet(
             "QTextEdit { background: #1e1e1e; color: #cccccc; border: 1px solid #444; "
             "border-radius: 4px; font-size: 11px; padding: 2px; }"
