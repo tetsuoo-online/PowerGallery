@@ -194,6 +194,7 @@ class OptionsDialog(QDialog):
         return item
 
     def save_and_close(self):
+        old_lang = config.get('language')
         selected_lang_item = self.lang_list.currentItem()
         if selected_lang_item:
             config.set_language(selected_lang_item.data(Qt.ItemDataRole.UserRole))
@@ -209,8 +210,10 @@ class OptionsDialog(QDialog):
             if hasattr(widget, 'save'):
                 widget.save()
 
+        lang_changed = config.get('language') != old_lang
+
         if isinstance(self.parent(), MainWindow):
-            self.parent().refresh_ui_texts()
+            self.parent().refresh_ui_texts(lang_changed)
             self.parent().apply_styles()
 
         self.accept()
@@ -993,7 +996,7 @@ class GridTab(QWidget):
 
     # ── UI helpers ────────────────────────────────────────────────────────────
 
-    def refresh_ui_texts(self):
+    def refresh_ui_texts(self, lang_changed=False):
         self.options_btn.setText(config.get_text('btn_options'))
         self.export_btn.setText(config.get_text('btn_export'))
         self.import_btn.setText(config.get_text('btn_import'))
@@ -1002,7 +1005,8 @@ class GridTab(QWidget):
         self.drop_zone.setText(config.get_text('drop_zone_text'))
         self.update_module_dropdown()
         self._set_idle()
-        self.refresh_cards()
+        if lang_changed:
+            self.refresh_cards()
 
     def get_tab_widget(self):
         parent = self.parent()
@@ -1062,8 +1066,8 @@ class FullscreenViewer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         top_bar = QHBoxLayout()
-        close_btn = QPushButton("✕ ESC")
-        close_btn.setFixedSize(80, 40)
+        close_btn = QPushButton("✕")
+        close_btn.setFixedSize(40, 40)
         close_btn.setStyleSheet(get_styles().fullscreen_close_button())
         close_btn.clicked.connect(self.close)
 
@@ -1355,12 +1359,12 @@ class MainWindow(QMainWindow):
             widget.deleteLater()
         self.add_tab()
 
-    def refresh_ui_texts(self):
+    def refresh_ui_texts(self, lang_changed=False):
         self.setWindowTitle(config.get_text('window_title'))
         for i in range(self.tabs.count()):
             tab = self.tabs.widget(i)
             if hasattr(tab, 'refresh_ui_texts'):
-                tab.refresh_ui_texts()
+                tab.refresh_ui_texts(lang_changed)
 
     def apply_styles(self):
         styles = get_styles()
