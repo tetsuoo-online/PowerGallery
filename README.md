@@ -65,7 +65,7 @@ START.BAT
 ---
 
 ## Screenshots
-![alt text](assets/options.webp) So many languages ! ^^
+![alt text](assets/Options.webp) So many languages ! ^^
 
 ![alt text](assets/2026-03-27_08_56_34-PowerGallery_V9.webp)
 
