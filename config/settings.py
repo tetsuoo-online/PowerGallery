@@ -19,6 +19,7 @@ _DEFAULTS = {
     'import_mode': 'replace',
     'import_in_tabs': False,
     'auto_load_last': False,
+    'auto_save_session': False,
     'selected_module': None,
     'current_style': 'dark',
     'dataset_clear_if_empty': False,
@@ -28,11 +29,6 @@ _DEFAULTS = {
 # ── Language registry ─────────────────────────────────────────────────────────
 
 def _discover_languages():
-    """
-    Scan config/lang/*.py (excluding __init__.py) and return an ordered dict:
-      { lang_key: {'name': str, 'icon': str|None, 'module': module} }
-    lang_key = filename stem (e.g. 'fr', 'en').
-    """
     langs = {}
     if not _LANG_DIR.exists():
         return langs
@@ -100,7 +96,6 @@ class Config:
     # ── Language ──────────────────────────────────────────────────────────────
 
     def get_languages(self):
-        """Return the language registry dict."""
         return self._languages
 
     def set_language(self, lang_key):
@@ -138,7 +133,7 @@ class Config:
 
     def set_current_style(self, style_name):
         self._data['current_style'] = style_name
-        self._styles = None  # force reload on next get_styles()
+        self._styles = None
         self._save()
 
     # ── Convenience setters ───────────────────────────────────────────────────
@@ -151,6 +146,9 @@ class Config:
 
     def set_auto_load_last(self, value):
         self.set('auto_load_last', value)
+
+    def set_auto_save_session(self, value):
+        self.set('auto_save_session', value)
 
     def set_selected_module(self, module_key):
         self.set('selected_module', module_key)

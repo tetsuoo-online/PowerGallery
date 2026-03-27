@@ -3,6 +3,7 @@
   "import_mode": "replace",
   "import_in_tabs": false,
   "auto_load_last": true,
+  "auto_save_session": false,
   "selected_module": "dataset",
   "current_style": "dark",
   "dataset_clear_if_empty": true,

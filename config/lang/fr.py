@@ -7,6 +7,7 @@ LANG = {
     'btn_select_folder': 'Checkpoints Folder',
     'btn_export': 'Export JSON',
     'btn_import': 'Import JSON',
+    'btn_save_tabs': '💾 Sauver Onglets',
     'btn_clear': "Vider l'onglet",
     'slider_label': 'Taille',
     'drop_zone_text': '🖼️ Glissez des images ou JSON ici',
@@ -27,6 +28,7 @@ LANG = {
     # Checkboxes onglet Général
     'options_import_in_tabs': 'Importer dans des onglets',
     'options_auto_load_last': 'Charger la dernière session',
+    'options_auto_save_session': 'Sauvegarde auto de session',
     # Onglet Modules
     'options_module_none': 'Aucun module',
     # Menu déroulant module
@@ -37,6 +39,7 @@ LANG = {
     'msg_no_images': 'Aucune image à exporter',
     'msg_exported': 'Exporté',
     'msg_imported': 'Importé',
+    'msg_session_saved': 'Session sauvegardée ({n} onglet(s))',
     'msg_multiple_json': '⚠️ Plusieurs fichiers JSON détectés. Seul le premier sera importé.',
     'msg_cant_delete_first_tab': "Impossible de supprimer le dernier onglet",
     'msg_cant_delete_last_tab': "Impossible de fermer le seul onglet",

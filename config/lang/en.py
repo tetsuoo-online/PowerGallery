@@ -7,6 +7,7 @@ LANG = {
     'btn_select_folder': 'Checkpoints Folder',
     'btn_export': 'Export JSON',
     'btn_import': 'Import JSON',
+    'btn_save_tabs': '💾 Save Tabs',
     'btn_clear': 'Clear Tab',
     'slider_label': 'Size',
     'drop_zone_text': '🖼️ Drop images or JSON here',
@@ -27,6 +28,7 @@ LANG = {
     # General tab checkboxes
     'options_import_in_tabs': 'Import in Tabs',
     'options_auto_load_last': 'Auto-load last session',
+    'options_auto_save_session': 'Auto-save session',
     # Modules tab
     'options_module_none': 'No module',
     # Module dropdown
@@ -37,6 +39,7 @@ LANG = {
     'msg_no_images': 'No images to export',
     'msg_exported': 'Exported',
     'msg_imported': 'Imported',
+    'msg_session_saved': 'Session saved ({n} tab(s))',
     'msg_multiple_json': '⚠️ Multiple JSON files detected. Importing only the first one.',
     'msg_cant_delete_first_tab': "Can't delete the last tab",
     'msg_cant_delete_last_tab': "Can't close the only tab",

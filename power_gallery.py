@@ -114,11 +114,14 @@ class OptionsDialog(QDialog):
         self.import_in_tabs.setChecked(config.get('import_in_tabs'))
         self.auto_load_last = QCheckBox(config.get_text('options_auto_load_last'))
         self.auto_load_last.setChecked(config.get('auto_load_last'))
+        self.auto_save_session = QCheckBox(config.get_text('options_auto_save_session'))
+        self.auto_save_session.setChecked(config.get('auto_save_session'))
 
         layout.addWidget(lang_group)
         layout.addWidget(import_group)
         layout.addWidget(self.import_in_tabs)
         layout.addWidget(self.auto_load_last)
+        layout.addWidget(self.auto_save_session)
         layout.addStretch()
         tab.setLayout(layout)
         return tab
@@ -133,13 +136,12 @@ class OptionsDialog(QDialog):
         return tab
 
     def create_modules_tab(self):
-        """Dynamically built from MODULE_REGISTRY — no hardcoded module names."""
         tab = QWidget()
         layout = QVBoxLayout()
         current_module = config.get('selected_module')
 
-        self.module_checkboxes = {}   # key → QCheckBox
-        self.module_settings_widgets = []  # widgets with .save()
+        self.module_checkboxes = {}
+        self.module_settings_widgets = []
 
         self.module_none = QCheckBox(config.get_text('options_module_none'))
         self.module_none.setChecked(current_module is None)
@@ -158,7 +160,6 @@ class OptionsDialog(QDialog):
                     layout.addWidget(extra)
                     self.module_settings_widgets.append(extra)
 
-        # Radio-like exclusivity
         def on_none(checked):
             if checked:
                 for c in self.module_checkboxes.values():
@@ -207,6 +208,7 @@ class OptionsDialog(QDialog):
         config.set_import_mode('replace' if self.import_replace.isChecked() else 'add')
         config.set_import_in_tabs(self.import_in_tabs.isChecked())
         config.set_auto_load_last(self.auto_load_last.isChecked())
+        config.set_auto_save_session(self.auto_save_session.isChecked())
 
         selected_module = next(
             (key for key, cb in self.module_checkboxes.items() if cb.isChecked()), None)
@@ -263,7 +265,6 @@ class ImageCard(QFrame):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(3)
 
-        # Top bar (close btn + optional module section)
         top_container = QWidget()
         top_layout = QHBoxLayout()
         top_layout.setContentsMargins(0, 0, 0, 0)
@@ -280,7 +281,6 @@ class ImageCard(QFrame):
 
         top_container.setLayout(top_layout)
 
-        # Image
         image_container = QWidget()
         img_layout = QHBoxLayout()
         img_layout.setContentsMargins(0, 0, 0, 0)
@@ -298,12 +298,10 @@ class ImageCard(QFrame):
         img_layout.addStretch()
         image_container.setLayout(img_layout)
 
-        # Bottom module widget (criteria buttons, text edit, …)
         bottom_widget = None
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
 
-        # Store containers for apply_styles
         self._top_container = top_container
         self._image_container = image_container
         self._bottom_widget = bottom_widget
@@ -462,11 +460,14 @@ class GridTab(QWidget):
         self.update_module_dropdown()
         self.module_dropdown.currentIndexChanged.connect(self.on_module_action_selected)
 
-        self.export_btn = QPushButton(config.get_text('btn_export'))
-        self.export_btn.clicked.connect(self.export_grid)
-
         self.import_btn = QPushButton(config.get_text('btn_import'))
         self.import_btn.clicked.connect(self.import_grid)
+
+        self.save_tabs_btn = QPushButton(config.get_text('btn_save_tabs'))
+        self.save_tabs_btn.clicked.connect(self.save_tabs_manually)
+
+        self.export_btn = QPushButton(config.get_text('btn_export'))
+        self.export_btn.clicked.connect(self.export_grid)
 
         self.clear_btn = QPushButton(config.get_text('btn_clear'))
         self.clear_btn.setStyleSheet(get_styles().clear_button())
@@ -475,8 +476,9 @@ class GridTab(QWidget):
         controls1.addWidget(self.close_tab_btn)
         controls1.addWidget(self.options_btn)
         controls1.addWidget(self.module_dropdown)
-        controls1.addWidget(self.export_btn)
         controls1.addWidget(self.import_btn)
+        controls1.addWidget(self.save_tabs_btn)
+        controls1.addWidget(self.export_btn)
         controls1.addWidget(self.clear_btn)
         controls1.addStretch()
 
@@ -598,7 +600,6 @@ class GridTab(QWidget):
         return ""
 
     def _set_idle(self):
-        """Restore log label to idle state (module name in muted color)."""
         try:
             if self.log_label is not None:
                 self.log_label.setText(self._get_module_name())
@@ -725,6 +726,9 @@ class GridTab(QWidget):
             if idx >= 0:
                 tab_widget.removeTab(idx)
                 self.deleteLater()
+                mw = self.get_main_window() if tab_widget.count() > 0 else None
+                if mw:
+                    mw._auto_save_session_if_enabled()
         else:
             self.log_label.setText(config.get_text('msg_cant_delete_last_tab'))
             self.log_label.setStyleSheet("color: yellow; font-weight: bold;")
@@ -858,6 +862,16 @@ class GridTab(QWidget):
         self.refresh_grid()
         self.log(config.get_text('msg_loaded'))
 
+    # ── Save Tabs (manual) ────────────────────────────────────────────────────
+
+    def save_tabs_manually(self):
+        mw = self.get_main_window()
+        if not mw:
+            return
+        paths = mw._collect_session_paths()
+        config.save_last_session(paths)
+        self.log(config.get_text('msg_session_saved').format(n=len(paths)))
+
     # ── Export / Import ───────────────────────────────────────────────────────
 
     def export_grid(self):
@@ -956,13 +970,9 @@ class GridTab(QWidget):
         mw = self.get_main_window()
         if not mw:
             return
-        paths = []
-        for i in range(mw.tabs.count()):
-            tab = mw.tabs.widget(i)
-            if isinstance(tab, GridTab) and getattr(tab, 'last_imported_json', None):
-                if tab.last_imported_json not in paths:
-                    paths.append(tab.last_imported_json)
+        paths = mw._collect_session_paths()
         config.save_last_session(paths)
+        mw._auto_save_session_if_enabled()
 
     # ── Card refresh ──────────────────────────────────────────────────────────
 
@@ -1005,6 +1015,7 @@ class GridTab(QWidget):
         self.options_btn.setText(config.get_text('btn_options'))
         self.export_btn.setText(config.get_text('btn_export'))
         self.import_btn.setText(config.get_text('btn_import'))
+        self.save_tabs_btn.setText(config.get_text('btn_save_tabs'))
         self.clear_btn.setText(config.get_text('btn_clear'))
         self.size_label.setText(config.get_text('slider_label') + ":")
         self.drop_zone.setText(config.get_text('drop_zone_text'))
@@ -1320,6 +1331,25 @@ class MainWindow(QMainWindow):
         else:
             self.add_tab()
 
+    # ── Session helpers ───────────────────────────────────────────────────────
+
+    def _collect_session_paths(self):
+        """Return list of last_imported_json paths across all tabs (deduped, ordered)."""
+        paths = []
+        for i in range(self.tabs.count()):
+            tab = self.tabs.widget(i)
+            if isinstance(tab, GridTab) and getattr(tab, 'last_imported_json', None):
+                if tab.last_imported_json not in paths:
+                    paths.append(tab.last_imported_json)
+        return paths
+
+    def _auto_save_session_if_enabled(self):
+        if config.get('auto_save_session'):
+            paths = self._collect_session_paths()
+            config.save_last_session(paths)
+
+    # ── Tab management ────────────────────────────────────────────────────────
+
     def load_last_session(self):
         last_session = config.get_last_session()
         if not last_session:
@@ -1344,12 +1374,14 @@ class MainWindow(QMainWindow):
         self.tabs.setCurrentIndex(tab_index)
         if self.tabs.count() == 1:
             self.tabs.setTabText(0, "A")
+        self._auto_save_session_if_enabled()
 
     def close_tab_at_index(self, index):
         if self.tabs.count() > 1:
             widget = self.tabs.widget(index)
             self.tabs.removeTab(index)
             widget.deleteLater()
+            self._auto_save_session_if_enabled()
         else:
             tab = self.tabs.widget(index)
             if hasattr(tab, 'log'):
@@ -1363,6 +1395,12 @@ class MainWindow(QMainWindow):
             self.tabs.removeTab(0)
             widget.deleteLater()
         self.add_tab()
+
+    def closeEvent(self, event):
+        self._auto_save_session_if_enabled()
+        super().closeEvent(event)
+
+    # ── UI ────────────────────────────────────────────────────────────────────
 
     def refresh_ui_texts(self, lang_changed=False):
         self.setWindowTitle(config.get_text('window_title'))
