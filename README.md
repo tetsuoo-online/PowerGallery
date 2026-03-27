@@ -17,7 +17,7 @@ Power Gallery lets you load batches of images into a grid, compare them side by 
 - **Fullscreen comparison** — view any image full screen; drag a split handle to compare two images from different tabs side by side
 - **Modules** — switch between evaluation modes:
   - *Checkpoint Manager* — rate images against named criteria (beauty, errors, LoRAs, prompts…), score each criterion manually as positive, neutral, or negative
-  - *Dataset Manager* — view and edit the `.txt` caption file associated with each image; batch add or replace tags
+  - *Dataset Manager* — view and edit the `.txt` caption file associated with each image; batch add or replace tags. Is not TXT is present, it will be created automatically as you fill up the text field, or deleted if you remove the text.
 - **Resizable grid** — use the slider or Ctrl+scroll to zoom cards in/out
 - **Session save/load** — export your grid to JSON and reload it later, including all ratings
 - **Style editor** — customize the app's color theme with a visual editor, duplicate or delete custom themes
