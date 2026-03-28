@@ -100,6 +100,11 @@ LANG = {
     'dataset_action_add_tag': 'Ajout de Tag (+)',
     'dataset_action_replace_tag': 'Remplacement de Tag (♻️)',
     'dataset_clear_if_empty': 'Effacer TXT si vide',
+    # Hover hints — Options dialog
+    'hint_import_mode': 'Ajouter : conserve les cartes existantes. Remplacer : vide la grille avant import.',
+    'hint_import_in_tabs': 'Si activé, les fichiers déposés sont chargés dans un nouvel onglet quand le courant a déjà des images.',
+    'hint_auto_load_last': 'Recharge automatiquement la dernière session sauvegardée au démarrage.',
+    'hint_auto_save_session': 'Sauvegarde automatiquement la session à chaque fermeture d\'onglet ou import JSON.',
     # Hover hints
     'hover_close_tab': 'Fermer cet onglet',
     'hover_add_tab': 'Ajouter un onglet',

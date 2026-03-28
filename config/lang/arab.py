@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 lang_name = "العربية"
 lang_icon = "flags/arab.gif"
 

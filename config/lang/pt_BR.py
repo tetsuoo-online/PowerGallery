@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 lang_name = "Português (BR)"
 lang_icon = "flags/pt_BR.gif"
 

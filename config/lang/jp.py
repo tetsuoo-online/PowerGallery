@@ -1,4 +1,3 @@
-# coding: utf-8
 lang_name = "日本語"
 lang_icon = "flags/jp.gif"
 

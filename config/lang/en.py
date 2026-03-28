@@ -100,6 +100,11 @@ LANG = {
     'dataset_action_add_tag': 'Add Tag (+)',
     'dataset_action_replace_tag': 'Replace Tag (♻️)',
     'dataset_clear_if_empty': 'Delete TXT if empty',
+    # Hover hints — Options dialog
+    'hint_import_mode': 'Add: keeps existing cards. Replace: clears the grid before importing.',
+    'hint_import_in_tabs': 'When enabled, dropped files are loaded in a new tab if the current one already has images.',
+    'hint_auto_load_last': 'Automatically reloads the last saved session on startup.',
+    'hint_auto_save_session': 'Automatically saves the session whenever a tab is closed or a JSON is imported.',
     # Hover hints
     'hover_close_tab': 'Close this tab',
     'hover_add_tab': 'Add a tab',

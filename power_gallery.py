@@ -54,19 +54,37 @@ class OptionsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(config.get_text('options_title'))
         self.setModal(True)
-        self.setMinimumSize(500, 450)
+        self.setMinimumSize(500, 490)
         self.apply_options_style()
 
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(4)
         self.tabs = QTabWidget()
         self.tabs.addTab(self.create_general_tab(), config.get_text('options_tab_general'))
         self.tabs.addTab(self.create_personalization_tab(), config.get_text('options_tab_style'))
         self.tabs.addTab(self.create_modules_tab(), config.get_text('options_tab_modules'))
 
+        # Info bar
+        info_row = QHBoxLayout()
+        info_row.setContentsMargins(4, 0, 4, 0)
+        info_icon = QLabel("ℹ️")
+        self.options_info_label = QLabel("")
+        self.options_info_label.setStyleSheet("color: #888; font-style: italic;")
+        self.options_info_label.setWordWrap(True)
+        # Resserrer l'interligne via font
+        _font = self.options_info_label.font()
+        self.options_info_label.setFont(_font)
+        info_row.addWidget(info_icon, 0, Qt.AlignmentFlag.AlignTop)
+        info_row.addWidget(self.options_info_label, 1, Qt.AlignmentFlag.AlignTop)
+        info_widget = QWidget()
+        info_widget.setFixedHeight(35)
+        info_widget.setLayout(info_row)
+
         close_btn = QPushButton(config.get_text('options_close'))
         close_btn.clicked.connect(self.save_and_close)
 
         main_layout.addWidget(self.tabs)
+        main_layout.addWidget(info_widget)
         main_layout.addWidget(close_btn)
         self.setLayout(main_layout)
 
@@ -116,6 +134,12 @@ class OptionsDialog(QDialog):
         self.auto_load_last.setChecked(config.get('auto_load_last'))
         self.auto_save_session = QCheckBox(config.get_text('options_auto_save_session'))
         self.auto_save_session.setChecked(config.get('auto_save_session'))
+
+        # Hover descriptions
+        self._install_option_hover(import_group, 'hint_import_mode')
+        self._install_option_hover(self.import_in_tabs, 'hint_import_in_tabs')
+        self._install_option_hover(self.auto_load_last, 'hint_auto_load_last')
+        self._install_option_hover(self.auto_save_session, 'hint_auto_save_session')
 
         layout.addWidget(lang_group)
         layout.addWidget(import_group)
@@ -183,6 +207,10 @@ class OptionsDialog(QDialog):
         layout.addStretch()
         tab.setLayout(layout)
         return tab
+
+    def _install_option_hover(self, widget, hint_key):
+        widget.enterEvent = lambda e, k=hint_key: self.options_info_label.setText(config.get_text(k))
+        widget.leaveEvent = lambda e: self.options_info_label.setText("")
 
     @staticmethod
     def _build_lang_list_item(lang_key, lang_info):
@@ -621,37 +649,32 @@ class GridTab(QWidget):
             return module.get_module_name() if hasattr(module, 'get_module_name') else module_name
         return ""
 
+    def _build_idle_text(self):
+        parts = []
+        module = self._get_module_name()
+        if module:
+            parts.append(module)
+        if getattr(self, 'last_imported_json', None):
+            parts.append(os.path.basename(self.last_imported_json))
+        n = len(self.cards) if hasattr(self, 'cards') else 0
+        if n > 0:
+            parts.append(f"{n} images")
+        return " - ".join(parts)
+
     def _set_idle(self):
         try:
             if self.log_label is not None:
-                self.log_label.setText(self._get_module_name())
+                self.log_label.setText(self._build_idle_text())
                 self.log_label.setStyleSheet(f"color: {get_styles().COLORS['text2']};")
         except RuntimeError:
             pass
 
-    def log(self, message, persistent_callback=None):
+    def log(self, message):
         module = self._get_module_name()
         text = f"{module} - {message}" if module else message
         self.log_label.setText(text)
         self.log_label.setStyleSheet(f"color: {get_styles().COLORS['accent']}; font-weight: bold;")
-        if persistent_callback:
-            def run_then_idle():
-                persistent_callback()
-                QTimer.singleShot(5000, self._set_idle)
-            QTimer.singleShot(3000, run_then_idle)
-        else:
-            QTimer.singleShot(3000, self._set_idle)
-
-    def show_info_persistent(self, text, color=None):
-        try:
-            if self.log_label is not None:
-                module = self._get_module_name()
-                display = f"{module} - {text}" if module else text
-                self.log_label.setText(display)
-                c = color or get_styles().COLORS['accent']
-                self.log_label.setStyleSheet(f"color: {c}; font-weight: bold;")
-        except RuntimeError:
-            pass
+        QTimer.singleShot(3000, self._set_idle)
 
     def safe_clear_log(self):
         self._set_idle()
@@ -754,7 +777,7 @@ class GridTab(QWidget):
         else:
             self.log_label.setText(config.get_text('msg_cant_delete_last_tab'))
             self.log_label.setStyleSheet("color: yellow; font-weight: bold;")
-            QTimer.singleShot(3000, self.safe_clear_log)
+            QTimer.singleShot(3000, self._set_idle)
         if tab_widget and tab_widget.count() == 1:
             tab_widget.setTabText(0, "A")
 
@@ -800,10 +823,8 @@ class GridTab(QWidget):
             new_images += 1
 
         self.refresh_grid()
-        total = len(self.cards)
         if new_images:
-            self.log(config.get_text('msg_loaded_images').format(n=new_images),
-                     lambda: self.show_info_persistent(f"{total} images"))
+            self.log(config.get_text('msg_loaded_images').format(n=new_images))
         if duplicates:
             self.log(config.get_text('msg_skipped_duplicates').format(n=duplicates))
         if not new_images and not duplicates:
@@ -855,10 +876,7 @@ class GridTab(QWidget):
         if card in self.cards:
             self.cards.remove(card)
         self.refresh_grid()
-        if self.cards:
-            self.show_info_persistent(f"{len(self.cards)} images")
-        else:
-            self.safe_clear_log()
+        self._set_idle()
 
     def swap_cards(self, source_card, target_card):
         """
@@ -960,7 +978,6 @@ class GridTab(QWidget):
 
             self.refresh_grid()
             self.last_imported_json = file_path
-            filename = os.path.basename(file_path)
             total = len(self.cards)
 
             msg = (f"{config.get_text('msg_imported')}: +{added} images (total: {total})"
@@ -969,7 +986,7 @@ class GridTab(QWidget):
             if missing:
                 msg += f" ({missing} missing files skipped)"
 
-            self.log(msg, lambda: self.show_info_persistent(f"{filename} - {total} images"))
+            self.log(msg)
             self.save_to_last_session(file_path)
 
         except Exception as e:

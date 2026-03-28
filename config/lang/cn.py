@@ -1,4 +1,3 @@
-# coding: utf-8
 lang_name = "中文"
 lang_icon = "flags/cn.gif"
 
