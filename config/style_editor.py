@@ -1,671 +1,440 @@
 """
-Style Editor Dialog - Visual interface for creating and editing custom styles
+Style Editor — visual interface for creating and editing custom styles.
+Two sub-tabs: Base (theme colors) and Module (module COLORS_EXTRA).
 """
 
-import os
 import importlib
 import sys
 from pathlib import Path
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton, 
-                             QLabel, QListWidget, QColorDialog, QLineEdit, 
+from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+                             QLabel, QListWidget, QColorDialog, QLineEdit,
                              QMessageBox, QTabWidget, QWidget, QGridLayout,
                              QScrollArea, QGroupBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 
 
-class StyleEditorWidget(QWidget):
-    """Embedded style editor widget for use in tabs"""
-    
-    def __init__(self, config, parent=None):
+# ── Shared color editor panel ─────────────────────────────────────────────────
+
+class ColorEditorPanel(QWidget):
+    """
+    Reusable panel: list of styles on the left, color grid on the right.
+    Works for both base themes and module styles.
+    """
+
+    def __init__(self, config, mode, parent=None):
+        """
+        mode : 'base' | 'module'
+        """
         super().__init__(parent)
         self.config = config
+        self.mode = mode
         self.current_style_name = None
         self.current_colors = {}
         self.color_buttons = {}
-        
-        self.setup_ui()
-        self.load_styles_list()
-    
-    def setup_ui(self):
-        """Setup the UI with style selection and color editor"""
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # Top section: Style management
-        top_section = QHBoxLayout()
-        
-        # Left: Style list
+        self._readonly = True   # True when a built-in / locked style is selected
+        self._setup_ui()
+
+    # ── UI ────────────────────────────────────────────────────────────────────
+
+    def _setup_ui(self):
+        main = QVBoxLayout()
+        main.setContentsMargins(0, 0, 0, 0)
+
+        top = QHBoxLayout()
+
+        # Style list
         list_group = QGroupBox(self.config.get_text('style_available_styles'))
-        list_layout = QVBoxLayout()
-        
+        ll = QVBoxLayout()
         self.style_list = QListWidget()
-        self.style_list.currentItemChanged.connect(self.on_style_selected)
-        list_layout.addWidget(self.style_list)
-        
-        list_group.setLayout(list_layout)
-        
-        # Right: Actions
-        actions_group = QGroupBox(self.config.get_text('style_actions'))
-        actions_layout = QVBoxLayout()
-        
+        self.style_list.currentItemChanged.connect(self._on_style_selected)
+        ll.addWidget(self.style_list)
+        list_group.setLayout(ll)
+
+        # Actions
+        act_group = QGroupBox(self.config.get_text('style_actions'))
+        al = QVBoxLayout()
+        self.new_name_input = QLineEdit()
+        self.new_name_input.setPlaceholderText(self.config.get_text('style_new_name_placeholder'))
         self.duplicate_btn = QPushButton(self.config.get_text('style_duplicate_btn'))
         self.duplicate_btn.clicked.connect(self.duplicate_style)
-        
         self.delete_btn = QPushButton(self.config.get_text('style_delete_btn'))
         self.delete_btn.clicked.connect(self.delete_style)
         self.delete_btn.setEnabled(False)
-        
-        self.new_name_input = QLineEdit()
-        self.new_name_input.setPlaceholderText(self.config.get_text('style_new_name_placeholder'))
-        
-        actions_layout.addWidget(QLabel(self.config.get_text('style_select_to_duplicate')))
-        actions_layout.addWidget(self.new_name_input)
-        actions_layout.addWidget(self.duplicate_btn)
-        actions_layout.addWidget(QLabel(""))
-        actions_layout.addWidget(self.delete_btn)
-        actions_layout.addStretch()
-        
-        actions_group.setLayout(actions_layout)
-        
-        top_section.addWidget(list_group, 2)
-        top_section.addWidget(actions_group, 1)
-        
-        # Bottom section: Color editor
+        al.addWidget(QLabel(self.config.get_text('style_select_to_duplicate')))
+        al.addWidget(self.new_name_input)
+        al.addWidget(self.duplicate_btn)
+        al.addWidget(QLabel(""))
+        al.addWidget(self.delete_btn)
+        al.addStretch()
+        act_group.setLayout(al)
+
+        top.addWidget(list_group, 2)
+        top.addWidget(act_group, 1)
+
+        # Color grid
         editor_group = QGroupBox(self.config.get_text('style_color_editor'))
-        editor_layout = QVBoxLayout()
-        
-        # Scroll area for colors
+        el = QVBoxLayout()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll_widget = QWidget()
+        sw = QWidget()
         self.colors_grid = QGridLayout()
-        scroll_widget.setLayout(self.colors_grid)
-        scroll.setWidget(scroll_widget)
-        
-        editor_layout.addWidget(scroll)
-        editor_group.setLayout(editor_layout)
-        
-        main_layout.addLayout(top_section, 1)
-        main_layout.addWidget(editor_group, 2)
-        
-        self.setLayout(main_layout)
-    
-    def load_styles_list(self):
-        """Load all available styles (built-in + custom)"""
-        # Disconnect signal temporarily to avoid triggering style change
-        self.style_list.currentItemChanged.disconnect(self.on_style_selected)
-        
+        sw.setLayout(self.colors_grid)
+        scroll.setWidget(sw)
+        el.addWidget(scroll)
+        editor_group.setLayout(el)
+
+        main.addLayout(top, 1)
+        main.addWidget(editor_group, 2)
+        self.setLayout(main)
+
+    # ── Style list loading ────────────────────────────────────────────────────
+
+    def load_styles_list(self, select_name=None):
+        self.style_list.currentItemChanged.disconnect(self._on_style_selected)
         self.style_list.clear()
-        
-        # Built-in styles (read-only)
-        self.style_list.addItem(f"🔒 dark {self.config.get_text('style_builtin_suffix')}")
-        self.style_list.addItem(f"🔒 light {self.config.get_text('style_builtin_suffix')}")
-        
-        # Custom styles
+
+        if self.mode == 'base':
+            self._load_base_list()
+            current = select_name or self.config.get('current_style')
+        else:
+            self._load_module_list()
+            current = select_name or self.config.get('current_module_style')
+
+        # Select matching item
+        for i in range(self.style_list.count()):
+            text = self.style_list.item(i).text()
+            name = text.split()[-1] if text.split()[-1] not in ['(built-in)', self.config.get_text('style_builtin_suffix')] else text.split()[1]
+            # simpler: check if current name is contained
+            if current and current in text:
+                self.style_list.setCurrentRow(i)
+                self._readonly = text.startswith('🔒')
+                self.delete_btn.setEnabled(not self._readonly)
+                self.current_style_name = current
+                self._load_colors(current)
+                break
+
+        self.style_list.currentItemChanged.connect(self._on_style_selected)
+
+    def _load_base_list(self):
+        suffix = self.config.get_text('style_builtin_suffix')
+        self.style_list.addItem(f"🔒 dark {suffix}")
+        self.style_list.addItem(f"🔒 light {suffix}")
         custom_dir = Path(__file__).parent / 'custom_styles'
         if custom_dir.exists():
-            for file in custom_dir.glob('*.py'):
-                if file.name != '__init__.py':
-                    style_name = file.stem
-                    self.style_list.addItem(f"✏️ {style_name}")
-        
-        # Select the current active style
-        current_style = self.config.get('current_style')
-        if current_style:
-            # Find and select the item matching current style
-            for i in range(self.style_list.count()):
-                item_text = self.style_list.item(i).text()
-                # Extract style name from "🔒 dark (built-in)" or "✏️ custom_name"
-                if current_style in item_text:
-                    self.style_list.setCurrentRow(i)
-                    # Load colors for display without changing the style
-                    self.current_style_name = current_style
-                    self.load_style_colors(current_style)
-                    # Enable/disable delete button
-                    if item_text.startswith("🔒"):
-                        self.delete_btn.setEnabled(False)
-                    else:
-                        self.delete_btn.setEnabled(True)
-                    break
-        
-        # Reconnect signal
-        self.style_list.currentItemChanged.connect(self.on_style_selected)
-    
-    def on_style_selected(self, current, previous):
-        """When a style is selected, load its colors"""
+            for f in sorted(custom_dir.glob('*.py')):
+                if f.name != '__init__.py':
+                    self.style_list.addItem(f"✏️ {f.stem}")
+
+    def _load_module_list(self):
+        module_key = self.config.get('selected_module')
+        if not module_key:
+            return
+        suffix = self.config.get_text('style_builtin_suffix')
+        self.style_list.addItem(f"🔒 style {suffix}")
+        custom_dir = self._module_custom_dir(module_key)
+        if custom_dir and custom_dir.exists():
+            for f in sorted(custom_dir.glob('*.py')):
+                if f.name != '__init__.py':
+                    self.style_list.addItem(f"✏️ {f.stem}")
+
+    @staticmethod
+    def _module_custom_dir(module_key):
+        base = Path(__file__).parent.parent / 'modules' / module_key / 'custom'
+        return base
+
+    # ── Selection handler ─────────────────────────────────────────────────────
+
+    def _on_style_selected(self, current, previous):
         if not current:
             return
-        
-        style_text = current.text()
-        
-        # Extract style name
-        if style_text.startswith("🔒"):
-            self.current_style_name = style_text.split()[1]
+        text = current.text()
+        if text.startswith('🔒'):
+            self.current_style_name = text.split()[1]
+            self._readonly = True
             self.delete_btn.setEnabled(False)
-        elif style_text.startswith("✏️"):
-            self.current_style_name = style_text.split()[1]
+        elif text.startswith('✏️'):
+            self.current_style_name = text.split()[1]
+            self._readonly = False
             self.delete_btn.setEnabled(True)
         else:
             return
-        
-        # Load colors from the style
-        self.load_style_colors(self.current_style_name)
-        
-        # Set as current style immediately
-        self.config.set_current_style(self.current_style_name)
-        
-        # Notify parent to refresh UI
-        self.notify_style_change()
-    
-    def notify_style_change(self):
-        """Notify parent window to refresh with new style"""
-        # Find MainWindow and refresh
+
+        self._load_colors(self.current_style_name)
+
+        if self.mode == 'base':
+            self.config.set_current_style(self.current_style_name)
+            self._notify_style_change()
+        else:
+            self.config.set('current_module_style', self.current_style_name)
+            self._notify_style_change()
+
+    def _notify_style_change(self):
         parent = self.parent()
         while parent:
             if parent.__class__.__name__ == 'MainWindow':
                 parent.apply_styles()
                 break
             parent = parent.parent() if hasattr(parent, 'parent') else None
-    
-    def load_style_colors(self, style_name):
-        """Load colors from a style module"""
+
+    # ── Color loading ─────────────────────────────────────────────────────────
+
+    def _load_colors(self, style_name):
         try:
-            if style_name == 'dark':
-                from config import styles_dark as style_module
-            elif style_name == 'light':
-                from config import styles_light as style_module
+            if self.mode == 'base':
+                mod = self._load_base_module(style_name)
+                self.current_colors = mod.COLORS.copy()
             else:
-                # Custom style
-                custom_module = __import__(f'config.custom_styles.{style_name}', fromlist=[style_name])
-                style_module = custom_module
-            
-            # Get COLORS dict
-            self.current_colors = style_module.COLORS.copy()
-            self.display_color_editor()
-            
+                mod = self._load_module_style(style_name)
+                self.current_colors = mod.COLORS_EXTRA.copy()
+            self._display_color_editor()
         except Exception as e:
-            QMessageBox.warning(self, "Error", self.config.get_text('style_load_error').format(e=e))
-    
-    def display_color_editor(self):
-        """Display color editor with all colors"""
-        # Clear existing widgets
+            QMessageBox.warning(self, "Error",
+                                self.config.get_text('style_load_error').format(e=e))
+
+    def _load_base_module(self, name):
+        if name == 'dark':
+            import config.styles_dark as m; return m
+        if name == 'light':
+            import config.styles_light as m; return m
+        return importlib.import_module(f'config.custom_styles.{name}')
+
+    def _load_module_style(self, name):
+        module_key = self.config.get('selected_module')
+        if name == 'style':
+            return importlib.import_module(f'modules.{module_key}.style')
+        # custom override
+        custom_dir = self._module_custom_dir(module_key)
+        path = custom_dir / f'{name}.py'
+        spec = importlib.util.spec_from_file_location(
+            f'modules.{module_key}.custom.{name}', path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    # ── Color editor display ──────────────────────────────────────────────────
+
+    def _display_color_editor(self):
         while self.colors_grid.count():
             item = self.colors_grid.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-        
         self.color_buttons.clear()
-        
-        # Create color pickers for each color
-        row = 0
-        for color_name, color_value in self.current_colors.items():
-            # Label
-            label = QLabel(color_name + ":")
-            label.setMinimumWidth(150)
-            
-            # Color button
-            color_btn = QPushButton()
-            color_btn.setFixedSize(80, 30)
-            color_btn.setStyleSheet(f"background-color: {color_value}; border: 1px solid #888;")
-            color_btn.clicked.connect(lambda checked, name=color_name: self.pick_color(name))
-            
-            # Value label
-            value_label = QLabel(color_value)
-            value_label.setMinimumWidth(80)
-            
-            self.colors_grid.addWidget(label, row, 0)
-            self.colors_grid.addWidget(color_btn, row, 1)
-            self.colors_grid.addWidget(value_label, row, 2)
-            
-            self.color_buttons[color_name] = (color_btn, value_label)
-            row += 1
-    
-    def pick_color(self, color_name):
-        """Open color picker for a specific color"""
-        # Can't modify built-in styles
-        if self.current_style_name in ['dark', 'light']:
+
+        for row, (name, value) in enumerate(self.current_colors.items()):
+            lbl = QLabel(name + ":")
+            lbl.setMinimumWidth(150)
+
+            btn = QPushButton()
+            btn.setFixedSize(80, 30)
+            btn.setStyleSheet(f"background-color: {value}; border: 1px solid #888;")
+            btn.setEnabled(not self._readonly)
+            if not self._readonly:
+                btn.clicked.connect(lambda checked, n=name: self._pick_color(n))
+
+            val_lbl = QLabel(value)
+            val_lbl.setMinimumWidth(80)
+
+            self.colors_grid.addWidget(lbl, row, 0)
+            self.colors_grid.addWidget(btn, row, 1)
+            self.colors_grid.addWidget(val_lbl, row, 2)
+            self.color_buttons[name] = (btn, val_lbl)
+
+    def _pick_color(self, color_name):
+        if self._readonly:
             QMessageBox.information(
-                self, 
-                self.config.get_text('style_readonly_title'), 
-                self.config.get_text('style_readonly_msg')
-            )
+                self,
+                self.config.get_text('style_readonly_title'),
+                self.config.get_text('style_readonly_msg'))
             return
-        
-        current_color = self.current_colors[color_name]
-        qcolor = QColor(current_color)
-        
-        color = QColorDialog.getColor(qcolor, self, self.config.get_text('style_pick_color').format(name=color_name))
-        
+        qcolor = QColor(self.current_colors[color_name])
+        color = QColorDialog.getColor(
+            qcolor, self,
+            self.config.get_text('style_pick_color').format(name=color_name))
         if color.isValid():
-            color_hex = color.name()
-            self.current_colors[color_name] = color_hex
-            
-            # Update button and label
-            btn, label = self.color_buttons[color_name]
-            btn.setStyleSheet(f"background-color: {color_hex}; border: 1px solid #888;")
-            label.setText(color_hex)
-            
-            # IMPORTANT: Save changes immediately to file
-            self.save_style_to_file(self.current_style_name, self.current_colors)
-            
-            # Refresh UI to apply the new color
-            self.notify_style_change()
-    
+            hex_val = color.name()
+            self.current_colors[color_name] = hex_val
+            btn, lbl = self.color_buttons[color_name]
+            btn.setStyleSheet(f"background-color: {hex_val}; border: 1px solid #888;")
+            lbl.setText(hex_val)
+            self._save_current()
+            self._notify_style_change()
+
+    # ── Save ──────────────────────────────────────────────────────────────────
+
+    def _save_current(self):
+        if self._readonly or not self.current_style_name:
+            return
+        if self.mode == 'base':
+            self._save_base_style(self.current_style_name, self.current_colors)
+        else:
+            self._save_module_style(self.current_style_name, self.current_colors)
+
+    def _save_base_style(self, name, colors):
+        custom_dir = Path(__file__).parent / 'custom_styles'
+        custom_dir.mkdir(exist_ok=True)
+        path = custom_dir / f'{name}.py'
+        lines = [f"# Custom style: {name}", "# Auto-generated by Style Editor", "",
+                 "COLORS = {"]
+        for k, v in colors.items():
+            lines.append(f"    '{k}': '{v}',")
+        lines += ["}", "",
+                  "from pathlib import Path as _Path",
+                  "exec((_Path(__file__).parent.parent / 'styles_base_layout.py').read_text(encoding='utf-8'))"]
+        path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        mod_name = f'config.custom_styles.{name}'
+        if mod_name in sys.modules:
+            importlib.reload(sys.modules[mod_name])
+        else:
+            importlib.import_module(mod_name)
+
+    def _save_module_style(self, name, colors):
+        module_key = self.config.get('selected_module')
+        custom_dir = self._module_custom_dir(module_key)
+        custom_dir.mkdir(parents=True, exist_ok=True)
+        init = custom_dir / '__init__.py'
+        if not init.exists():
+            init.write_text('', encoding='utf-8')
+        path = custom_dir / f'{name}.py'
+        lines = [f"# Module style override: {name}", "# Auto-generated by Style Editor", "",
+                 "COLORS_EXTRA = {"]
+        for k, v in colors.items():
+            lines.append(f"    '{k}': '{v}',")
+        lines += ["}"]
+        path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+    # ── Duplicate / Delete ────────────────────────────────────────────────────
+
     def duplicate_style(self):
-        """Duplicate the selected style with a new name"""
         if not self.current_style_name:
             QMessageBox.warning(self, "Warning", "Please select a style to duplicate")
             return
-        
         new_name = self.new_name_input.text().strip()
         if not new_name:
             QMessageBox.warning(self, "Warning", "Please enter a name for the new style")
             return
-        
-        # BUG FIX 1: Prevent using reserved names
-        if new_name.lower() in ['dark', 'light']:
-            QMessageBox.warning(
-                self, 
-                self.config.get_text('style_reserved_title'), 
-                self.config.get_text('style_reserved_msg').format(name=new_name)
-            )
+        if self.mode == 'base' and new_name.lower() in ['dark', 'light']:
+            QMessageBox.warning(self,
+                self.config.get_text('style_reserved_title'),
+                self.config.get_text('style_reserved_msg').format(name=new_name))
             return
-        
-        # Validate name (alphanumeric + underscore)
+        if self.mode == 'module' and new_name.lower() == 'style':
+            QMessageBox.warning(self,
+                self.config.get_text('style_reserved_title'),
+                self.config.get_text('style_reserved_msg').format(name=new_name))
+            return
         if not new_name.replace('_', '').isalnum():
             QMessageBox.warning(self, "Warning", self.config.get_text('style_invalid_name'))
             return
-        
-        # Check if already exists
-        custom_dir = Path(__file__).parent / 'custom_styles'
-        new_file = custom_dir / f'{new_name}.py'
-        if new_file.exists():
-            QMessageBox.warning(self, "Warning", self.config.get_text('style_already_exists').format(name=new_name))
-            return
-        
-        # Create new style file
-        self.save_style_to_file(new_name, self.current_colors)
-        
-        # Reload list and select new style
-        self.load_styles_list()
-        self.new_name_input.clear()
-        
-    
-    def delete_style(self):
-        """Delete the selected custom style"""
-        if not self.current_style_name:
-            return
-        
-        # Can't delete built-in styles
-        if self.current_style_name in ['dark', 'light']:
-            QMessageBox.warning(self, "Warning", self.config.get_text('style_cannot_delete_builtin'))
-            return
-        
-        reply = QMessageBox.question(
-            self, 
-            self.config.get_text('style_confirm_delete_title'), 
-            self.config.get_text('style_confirm_delete_msg').format(name=self.current_style_name),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            custom_dir = Path(__file__).parent / 'custom_styles'
-            file_to_delete = custom_dir / f'{self.current_style_name}.py'
-            
-            try:
-                file_to_delete.unlink()
-                self.load_styles_list()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", self.config.get_text('style_delete_error').format(e=e))
-    
-    def save_style_to_file(self, style_name, colors):
-        """Save a style to a Python file"""
-        custom_dir = Path(__file__).parent / 'custom_styles'
-        custom_dir.mkdir(exist_ok=True)
-        
-        file_path = custom_dir / f'{style_name}.py'
-        
-        # Generate Python file content
-        content = f'''# Custom style: {style_name}
-# Auto-generated by Style Editor
 
-COLORS = {{
-'''
-        for color_name, color_value in colors.items():
-            content += f"    '{color_name}': '{color_value}',\n"
-        
-        content += "}\n\n"
-        content += "from pathlib import Path as _Path\n"
-        content += "exec((_Path(__file__).parent.parent / 'styles_base_layout.py').read_text(encoding='utf-8'))\n"
-        
-        # Write to file
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        # CRITICAL: Reload the module so changes are immediately visible
-        module_name = f'config.custom_styles.{style_name}'
-        if module_name in sys.modules:
-            importlib.reload(sys.modules[module_name])
+        if self.mode == 'base':
+            dest = Path(__file__).parent / 'custom_styles' / f'{new_name}.py'
         else:
-            # Import it for the first time
-            __import__(module_name)
+            dest = self._module_custom_dir(self.config.get('selected_module')) / f'{new_name}.py'
+
+        if dest.exists():
+            QMessageBox.warning(self, "Warning",
+                self.config.get_text('style_already_exists').format(name=new_name))
+            return
+
+        if self.mode == 'base':
+            self._save_base_style(new_name, self.current_colors)
+        else:
+            self._save_module_style(new_name, self.current_colors)
+
+        self.load_styles_list(select_name=new_name)
+        self.new_name_input.clear()
+
+    def delete_style(self):
+        if not self.current_style_name or self._readonly:
+            return
+        reply = QMessageBox.question(
+            self,
+            self.config.get_text('style_confirm_delete_title'),
+            self.config.get_text('style_confirm_delete_msg').format(name=self.current_style_name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        if self.mode == 'base':
+            target = Path(__file__).parent / 'custom_styles' / f'{self.current_style_name}.py'
+        else:
+            target = (self._module_custom_dir(self.config.get('selected_module'))
+                      / f'{self.current_style_name}.py')
+        try:
+            target.unlink()
+            self.load_styles_list()
+        except Exception as e:
+            QMessageBox.critical(self, "Error",
+                self.config.get_text('style_delete_error').format(e=e))
 
 
-class StyleEditorDialog(QDialog):
-    """Dialog for creating and editing custom styles"""
-    
+# ── StyleEditorWidget (embedded in Options > Style tab) ───────────────────────
+
+class StyleEditorWidget(QWidget):
+
     def __init__(self, config, parent=None):
         super().__init__(parent)
         self.config = config
-        self.current_style_name = None
-        self.current_colors = {}
-        self.color_buttons = {}
-        
+        self._setup_ui()
+        self.reload()
+
+    def _setup_ui(self):
+        main = QVBoxLayout()
+        main.setContentsMargins(0, 0, 0, 0)
+
+        self.sub_tabs = QTabWidget()
+
+        self.base_panel = ColorEditorPanel(self.config, mode='base', parent=self)
+        self.module_panel = ColorEditorPanel(self.config, mode='module', parent=self)
+
+        self.sub_tabs.addTab(self.base_panel, self.config.get_text('style_tab_base'))
+        self.sub_tabs.addTab(self.module_panel, self.config.get_text('style_tab_module'))
+
+        main.addWidget(self.sub_tabs)
+        self.setLayout(main)
+
+    def reload(self):
+        """Refresh both panels — call after module or style change."""
+        self.base_panel.load_styles_list()
+        module_key = self.config.get('selected_module')
+        has_module_style = False
+        if module_key:
+            try:
+                importlib.import_module(f'modules.{module_key}.style')
+                has_module_style = True
+            except ModuleNotFoundError:
+                pass
+
+        self.sub_tabs.setTabEnabled(1, has_module_style)
+        if has_module_style:
+            self.module_panel.load_styles_list()
+        else:
+            # Clear module panel
+            while self.module_panel.colors_grid.count():
+                item = self.module_panel.colors_grid.takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+            self.module_panel.style_list.clear()
+            self.module_panel.style_list.addItem(
+                self.config.get_text('style_module_no_style'))
+
+
+# ── StyleEditorDialog (standalone dialog, kept for compatibility) ──────────────
+
+class StyleEditorDialog(QDialog):
+
+    def __init__(self, config, parent=None):
+        super().__init__(parent)
+        self.config = config
         self.setWindowTitle("Style Editor")
         self.setModal(True)
         self.setMinimumSize(700, 600)
-        
-        self.setup_ui()
-        self.load_styles_list()
-    
-    def setup_ui(self):
-        """Setup the UI with style selection and color editor"""
-        main_layout = QVBoxLayout()
-        
-        # Top section: Style management
-        top_section = QHBoxLayout()
-        
-        # Left: Style list
-        list_group = QGroupBox(self.config.get_text('style_available_styles'))
-        list_layout = QVBoxLayout()
-        
-        self.style_list = QListWidget()
-        self.style_list.currentItemChanged.connect(self.on_style_selected)
-        list_layout.addWidget(self.style_list)
-        
-        list_group.setLayout(list_layout)
-        
-        # Right: Actions
-        actions_group = QGroupBox(self.config.get_text('style_actions'))
-        actions_layout = QVBoxLayout()
-        
-        self.duplicate_btn = QPushButton(self.config.get_text('style_duplicate_btn'))
-        self.duplicate_btn.clicked.connect(self.duplicate_style)
-        
-        self.delete_btn = QPushButton(self.config.get_text('style_delete_btn'))
-        self.delete_btn.clicked.connect(self.delete_style)
-        self.delete_btn.setEnabled(False)
-        
-        self.new_name_input = QLineEdit()
-        self.new_name_input.setPlaceholderText(self.config.get_text('style_new_name_placeholder'))
-        
-        actions_layout.addWidget(QLabel(self.config.get_text('style_select_to_duplicate')))
-        actions_layout.addWidget(self.new_name_input)
-        actions_layout.addWidget(self.duplicate_btn)
-        actions_layout.addWidget(QLabel(""))
-        actions_layout.addWidget(self.delete_btn)
-        actions_layout.addStretch()
-        
-        actions_group.setLayout(actions_layout)
-        
-        top_section.addWidget(list_group, 2)
-        top_section.addWidget(actions_group, 1)
-        
-        # Bottom section: Color editor
-        editor_group = QGroupBox(self.config.get_text('style_color_editor'))
-        editor_layout = QVBoxLayout()
-        
-        # Scroll area for colors
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll_widget = QWidget()
-        self.colors_grid = QGridLayout()
-        scroll_widget.setLayout(self.colors_grid)
-        scroll.setWidget(scroll_widget)
-        
-        editor_layout.addWidget(scroll)
-        editor_group.setLayout(editor_layout)
-        
-        # Close button
-        close_btn = QPushButton(self.config.get_text('style_apply_close'))
-        close_btn.clicked.connect(self.apply_and_close)
-        
-        main_layout.addLayout(top_section, 1)
-        main_layout.addWidget(editor_group, 2)
-        main_layout.addWidget(close_btn)
-        
-        self.setLayout(main_layout)
-    
-    def load_styles_list(self):
-        """Load all available styles (built-in + custom)"""
-        # Disconnect signal temporarily to avoid triggering style change
-        self.style_list.currentItemChanged.disconnect(self.on_style_selected)
-        
-        self.style_list.clear()
-        
-        # Built-in styles (read-only)
-        self.style_list.addItem(f"🔒 dark {self.config.get_text('style_builtin_suffix')}")
-        self.style_list.addItem(f"🔒 light {self.config.get_text('style_builtin_suffix')}")
-        
-        # Custom styles
-        custom_dir = Path(__file__).parent / 'custom_styles'
-        if custom_dir.exists():
-            for file in custom_dir.glob('*.py'):
-                if file.name != '__init__.py':
-                    style_name = file.stem
-                    self.style_list.addItem(f"✏️ {style_name}")
-        
-        # Select the current active style
-        current_style = self.config.get('current_style')
-        if current_style:
-            # Find and select the item matching current style
-            for i in range(self.style_list.count()):
-                item_text = self.style_list.item(i).text()
-                # Extract style name from "🔒 dark (built-in)" or "✏️ custom_name"
-                if current_style in item_text:
-                    self.style_list.setCurrentRow(i)
-                    # Load colors for display without changing the style
-                    self.current_style_name = current_style
-                    self.load_style_colors(current_style)
-                    # Enable/disable delete button
-                    if item_text.startswith("🔒"):
-                        self.delete_btn.setEnabled(False)
-                    else:
-                        self.delete_btn.setEnabled(True)
-                    break
-        
-        # Reconnect signal
-        self.style_list.currentItemChanged.connect(self.on_style_selected)
-    
-    def on_style_selected(self, current, previous):
-        """When a style is selected, load its colors"""
-        if not current:
-            return
-        
-        style_text = current.text()
-        
-        # Extract style name
-        if style_text.startswith("🔒"):
-            self.current_style_name = style_text.split()[1]
-            self.delete_btn.setEnabled(False)
-        elif style_text.startswith("✏️"):
-            self.current_style_name = style_text.split()[1]
-            self.delete_btn.setEnabled(True)
-        else:
-            return
-        
-        # Load colors from the style
-        self.load_style_colors(self.current_style_name)
-    
-    def load_style_colors(self, style_name):
-        """Load colors from a style module"""
-        try:
-            if style_name == 'dark':
-                from config import styles_dark as style_module
-            elif style_name == 'light':
-                from config import styles_light as style_module
-            else:
-                # Custom style
-                custom_module = __import__(f'config.custom_styles.{style_name}', fromlist=[style_name])
-                style_module = custom_module
-            
-            # Get COLORS dict
-            self.current_colors = style_module.COLORS.copy()
-            self.display_color_editor()
-            
-        except Exception as e:
-            QMessageBox.warning(self, "Error", self.config.get_text('style_load_error').format(e=e))
-    
-    def display_color_editor(self):
-        """Display color editor with all colors"""
-        # Clear existing widgets
-        while self.colors_grid.count():
-            item = self.colors_grid.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        
-        self.color_buttons.clear()
-        
-        # Create color pickers for each color
-        row = 0
-        for color_name, color_value in self.current_colors.items():
-            # Label
-            label = QLabel(color_name + ":")
-            label.setMinimumWidth(150)
-            
-            # Color button
-            color_btn = QPushButton()
-            color_btn.setFixedSize(80, 30)
-            color_btn.setStyleSheet(f"background-color: {color_value}; border: 1px solid #888;")
-            color_btn.clicked.connect(lambda checked, name=color_name: self.pick_color(name))
-            
-            # Value label
-            value_label = QLabel(color_value)
-            value_label.setMinimumWidth(80)
-            
-            self.colors_grid.addWidget(label, row, 0)
-            self.colors_grid.addWidget(color_btn, row, 1)
-            self.colors_grid.addWidget(value_label, row, 2)
-            
-            self.color_buttons[color_name] = (color_btn, value_label)
-            row += 1
-    
-    def pick_color(self, color_name):
-        """Open color picker for a specific color"""
-        current_color = self.current_colors[color_name]
-        qcolor = QColor(current_color)
-        
-        color = QColorDialog.getColor(qcolor, self, self.config.get_text('style_pick_color').format(name=color_name))
-        
-        if color.isValid():
-            color_hex = color.name()
-            self.current_colors[color_name] = color_hex
-            
-            # Update button and label
-            btn, label = self.color_buttons[color_name]
-            btn.setStyleSheet(f"background-color: {color_hex}; border: 1px solid #888;")
-            label.setText(color_hex)
-    
-    def duplicate_style(self):
-        """Duplicate the selected style with a new name"""
-        if not self.current_style_name:
-            QMessageBox.warning(self, "Warning", "Please select a style to duplicate")
-            return
-        
-        new_name = self.new_name_input.text().strip()
-        if not new_name:
-            QMessageBox.warning(self, "Warning", "Please enter a name for the new style")
-            return
-        
-        # BUG FIX 1: Prevent using reserved names
-        if new_name.lower() in ['dark', 'light']:
-            QMessageBox.warning(
-                self, 
-                self.config.get_text('style_reserved_title'), 
-                self.config.get_text('style_reserved_msg').format(name=new_name)
-            )
-            return
-        
-        # Validate name (alphanumeric + underscore)
-        if not new_name.replace('_', '').isalnum():
-            QMessageBox.warning(self, "Warning", self.config.get_text('style_invalid_name'))
-            return
-        
-        # Check if already exists
-        custom_dir = Path(__file__).parent / 'custom_styles'
-        new_file = custom_dir / f'{new_name}.py'
-        if new_file.exists():
-            QMessageBox.warning(self, "Warning", self.config.get_text('style_already_exists').format(name=new_name))
-            return
-        
-        # Create new style file
-        self.save_style_to_file(new_name, self.current_colors)
-        
-        # Reload list and select new style
-        self.load_styles_list()
-        self.new_name_input.clear()
-        
-    
-    def delete_style(self):
-        """Delete the selected custom style"""
-        if not self.current_style_name:
-            return
-        
-        # Can't delete built-in styles
-        if self.current_style_name in ['dark', 'light']:
-            QMessageBox.warning(self, "Warning", self.config.get_text('style_cannot_delete_builtin'))
-            return
-        
-        reply = QMessageBox.question(
-            self, 
-            self.config.get_text('style_confirm_delete_title'), 
-            self.config.get_text('style_confirm_delete_msg').format(name=self.current_style_name),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            custom_dir = Path(__file__).parent / 'custom_styles'
-            file_to_delete = custom_dir / f'{self.current_style_name}.py'
-            
-            try:
-                file_to_delete.unlink()
-                self.load_styles_list()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", self.config.get_text('style_delete_error').format(e=e))
-    
-    def save_style_to_file(self, style_name, colors):
-        """Save a style to a Python file"""
-        custom_dir = Path(__file__).parent / 'custom_styles'
-        custom_dir.mkdir(exist_ok=True)
-        
-        file_path = custom_dir / f'{style_name}.py'
-        
-        # Generate Python file content
-        content = f'''# Custom style: {style_name}
-# Auto-generated by Style Editor
 
-COLORS = {{
-'''
-        for color_name, color_value in colors.items():
-            content += f"    '{color_name}': '{color_value}',\n"
-        
-        content += "}\n\n"
-        content += "from pathlib import Path as _Path\n"
-        content += "exec((_Path(__file__).parent.parent / 'styles_base_layout.py').read_text(encoding='utf-8'))\n"
-        
-        # Write to file
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-    
-    def apply_and_close(self):
-        """Apply current style and close dialog"""
-        if self.current_style_name:
-            # If we've modified a custom style, save it
-            if self.current_style_name not in ['dark', 'light']:
-                self.save_style_to_file(self.current_style_name, self.current_colors)
-            
-            # Set as current style
-            self.config.set_current_style(self.current_style_name)
-        
-        self.accept()
+        layout = QVBoxLayout()
+        self.editor = StyleEditorWidget(config, self)
+        close_btn = QPushButton(self.config.get_text('style_apply_close'))
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(self.editor)
+        layout.addWidget(close_btn)
+        self.setLayout(layout)

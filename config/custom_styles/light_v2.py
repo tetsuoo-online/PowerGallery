@@ -10,21 +10,12 @@ COLORS = {
     'border2': '#888888',
     'text1': '#ffffff',
     'text2': '#888888',
-    'crit1': '#888888',
     'tab_bg': '#cccccc',
     'tab_sel': '#cccccc',
     'accent': '#2196F3',
-    'score': 'yellow',
-    'score_border': '#1e1e1e',
     'canvas': '#444444',
     'danger': '#c62828',
     'danger_hover': '#eb3535',
-    'pos': '#4CAF50',
-    'pos_bg': '#2d5016',
-    'pos_hover': '#356019',
-    'neg': '#ef5350',
-    'neg_bg': '#5c1a1a',
-    'neg_hover': '#6b2020',
 }
 
 from pathlib import Path as _Path

@@ -116,4 +116,10 @@ LANG = {
     'card_title_placeholder': 'Title...',
     'card_description_placeholder': 'Description...',
     'options_fullscreen_opacity': 'Fullscreen opacity',
+    'options_import_recursive': 'Import folders recursively',
+    'hint_import_recursive': 'When enabled, loading a folder also includes images from all its subfolders.',
+    # Style Editor sub-tabs
+    'style_tab_base': 'Base',
+    'style_tab_module': 'Module',
+    'style_module_no_style': 'This module has no custom styles',
 }

@@ -13,6 +13,7 @@ from pathlib import Path
 
 _SETTINGS_FILE = Path(__file__).parent / 'settings.json'
 _LANG_DIR = Path(__file__).parent / 'lang'
+_MODULES_DIR = Path(__file__).parent.parent / 'modules'
 
 _DEFAULTS = {
     'language': 'en',
@@ -22,6 +23,7 @@ _DEFAULTS = {
     'auto_save_session': True,
     'selected_module': None,
     'current_style': 'dark',
+    'current_module_style': 'style',   # 'style' = built-in module default
     'dataset_clear_if_empty': False,
     'show_title': False,
     'show_description': False,
@@ -139,6 +141,45 @@ class Config:
         self._styles = None
         self._save()
 
+    def set_selected_module(self, module_key):
+        if module_key != self._data.get('selected_module'):
+            self._data['current_module_style'] = 'style'  # reset only on actual module change
+        self._data['selected_module'] = module_key
+        self._styles = None
+        self._save()
+
+    def get_module_style(self):
+        """
+        Return the active module style module (built-in or custom override).
+        Returns None if no module active or module has no style.py.
+        """
+        module_key = self._data.get('selected_module')
+        if not module_key:
+            return None
+        style_name = self._data.get('current_module_style', 'style')
+        try:
+            if style_name == 'style':
+                return importlib.import_module(f'modules.{module_key}.style')
+            custom_path = _MODULES_DIR / module_key / 'custom' / f'{style_name}.py'
+            spec = importlib.util.spec_from_file_location(
+                f'modules.{module_key}.custom.{style_name}', custom_path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+        except ModuleNotFoundError:
+            return None
+        except Exception as e:
+            print(f"[settings] Module style load error: {e}")
+            return None
+
+    def get_merged_colors(self):
+        """Base COLORS merged with active module COLORS_EXTRA. Module keys win."""
+        base = self.get_styles().COLORS.copy()
+        mod_style = self.get_module_style()
+        if mod_style and hasattr(mod_style, 'COLORS_EXTRA'):
+            base.update(mod_style.COLORS_EXTRA)
+        return base
+
     # ── Convenience setters ───────────────────────────────────────────────────
 
     def set_import_mode(self, mode):
@@ -152,9 +193,6 @@ class Config:
 
     def set_auto_save_session(self, value):
         self.set('auto_save_session', value)
-
-    def set_selected_module(self, module_key):
-        self.set('selected_module', module_key)
 
     # ── Last session ──────────────────────────────────────────────────────────
 

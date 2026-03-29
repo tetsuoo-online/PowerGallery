@@ -16,26 +16,15 @@ COLORS = {
     # ── Foreground / Text ─────────────────────────────────────────────────────
     'text1':        '#ffffff',    # primary text (on dark widgets)
     'text2':        '#888888',    # secondary / muted text
-    'crit1':        '#888888',    # criterion button neutral text+border
     # ── Tabs ──────────────────────────────────────────────────────────────────
     'tab_bg':       '#cccccc',
     'tab_sel':      '#cccccc',
     # ── Functional accents ────────────────────────────────────────────────────
     'accent':       '#2196F3',    # interactive / highlight / split handle
-    'score':        'yellow',
-    'score_border': '#1e1e1e',
     'canvas':       'black',      # image viewer / fullscreen background
     # ── UI danger (close, clear, remove tab) ──────────────────────────────────
     'danger':       '#c62828',
     'danger_hover': '#eb3535',
-    # ── Critère positif ───────────────────────────────────────────────────────
-    'pos':          '#4CAF50',
-    'pos_bg':       '#2d5016',
-    'pos_hover':    '#356019',
-    # ── Critère négatif ───────────────────────────────────────────────────────
-    'neg':          '#ef5350',
-    'neg_bg':       '#5c1a1a',
-    'neg_hover':    '#6b2020',
 }
 
 from pathlib import Path as _Path

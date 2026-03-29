@@ -1,12 +1,14 @@
 .git/
 __pycache__/
 _grids/
+grids/
 _temp/
 venv/
 *.ico
 *.pyc
 *.bak
 *- Copie*.py
+*.zip
 Desktop.ini
 README_*
 TODO.txt

@@ -52,6 +52,9 @@ class OptionsDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # Snapshot styles at open — restored if user closes with the X
+        self._initial_style = config.get('current_style')
+        self._initial_module_style = config.get('current_module_style')
         self.setWindowTitle(config.get_text('options_title'))
         self.setModal(True)
         self.setMinimumSize(500, 490)
@@ -216,6 +219,9 @@ class OptionsDialog(QDialog):
             if checked:
                 for c in self.module_checkboxes.values():
                     c.setChecked(False)
+            elif not any(c.isChecked() for c in self.module_checkboxes.values()):
+                # prevent unchecking when nothing else is selected
+                self.module_none.setChecked(True)
 
         def make_exclusive(selected_key):
             def on_toggle(checked):
@@ -266,6 +272,10 @@ class OptionsDialog(QDialog):
 
     def save_and_close(self):
         old_lang = config.get('language')
+        old_show_title = config.get('show_title')
+        old_show_description = config.get('show_description')
+        old_module = config.get('selected_module')
+
         selected_lang_item = self.lang_list.currentItem()
         if selected_lang_item:
             config.set_language(selected_lang_item.data(Qt.ItemDataRole.UserRole))
@@ -286,12 +296,40 @@ class OptionsDialog(QDialog):
                 widget.save()
 
         lang_changed = config.get('language') != old_lang
+        cards_need_refresh = (
+            lang_changed or
+            selected_module != old_module or
+            config.get('show_title') != old_show_title or
+            config.get('show_description') != old_show_description
+        )
 
         if isinstance(self.parent(), MainWindow):
             self.parent().refresh_ui_texts(lang_changed)
             self.parent().apply_styles()
+            if cards_need_refresh and not lang_changed:
+                for i in range(self.parent().tabs.count()):
+                    tab = self.parent().tabs.widget(i)
+                    if hasattr(tab, 'refresh_cards'):
+                        tab.refresh_cards()
 
         self.accept()
+
+    def _cancel_style_changes(self):
+        changed = (config.get('current_style') != self._initial_style or
+                   config.get('current_module_style') != self._initial_module_style)
+        if changed:
+            config.set_current_style(self._initial_style)
+            config.set('current_module_style', self._initial_module_style)
+            if isinstance(self.parent(), MainWindow):
+                self.parent().apply_styles()
+
+    def reject(self):
+        self._cancel_style_changes()
+        super().reject()
+
+    def closeEvent(self, event):
+        self._cancel_style_changes()
+        super().closeEvent(event)
 
 
 # ── Image card ────────────────────────────────────────────────────────────────
@@ -990,9 +1028,35 @@ class GridTab(QWidget):
         mw = self.get_main_window()
         if not mw:
             return
-        paths = mw._collect_session_paths()
-        config.save_last_session(paths)
-        self.log(config.get_text('msg_session_saved').format(n=len(paths)))
+        grids_dir = Path(__file__).parent / 'grids'
+        grids_dir.mkdir(exist_ok=True)
+        saved_paths = []
+        saved_count = 0
+        for i in range(mw.tabs.count()):
+            tab = mw.tabs.widget(i)
+            if not isinstance(tab, GridTab) or not tab.cards:
+                continue
+            tab_name = mw.tabs.tabText(i)
+            module = tab.get_active_module()
+            data = {"card_size": tab.card_size, "images": []}
+            for card in tab.cards:
+                card_data = {"absolutePath": card.image_path}
+                if config.get('show_title') and hasattr(card, 'title_edit') and card.title_edit:
+                    card_data['title'] = card.title_edit.text()
+                if config.get('show_description') and hasattr(card, 'description_edit') and card.description_edit:
+                    card_data['description'] = card.description_edit.toPlainText()
+                if module and hasattr(module, 'card_to_json'):
+                    card_data.update(module.card_to_json(card))
+                data["images"].append(card_data)
+            filename = f"grid-{tab_name}_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+            save_path = grids_dir / filename
+            with open(save_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            tab.last_imported_json = str(save_path)
+            saved_paths.append(str(save_path))
+            saved_count += 1
+        config.save_last_session(saved_paths)
+        self.log(config.get_text('msg_session_saved').format(n=saved_count))
 
     # ── Export / Import ───────────────────────────────────────────────────────
 

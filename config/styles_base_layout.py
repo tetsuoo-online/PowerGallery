@@ -4,13 +4,11 @@
 # Each theme file defines COLORS then exec()'s this file.
 #
 # COLOR FAMILIES:
-#   bg1-4, border1-2, text1-2, crit1  → UI generale
-#   tab_bg, tab_sel                    → Onglets
-#   accent                             → Interactif / highlight
-#   score, score_border, canvas        → Widgets speciaux
-#   danger, danger_hover               → Boutons destructifs UI (close, clear, remove)
-#   pos, pos_bg, pos_hover             → Critère positif (carte + bouton)
-#   neg, neg_bg, neg_hover             → Critère négatif (carte + bouton)
+#   bg1-4, border1-2, text1-2  → UI générale
+#   tab_bg, tab_sel             → Onglets
+#   accent                      → Interactif / highlight
+#   canvas                      → Image viewer / fullscreen background
+#   danger, danger_hover        → Boutons destructifs UI (close, clear, remove)
 # ============================================================================
 
 # Styles as functions |Marker for style_editor, don't edit or remove
@@ -18,27 +16,6 @@ def card_style():
     return f"""
         ImageCard {{
             border: 2px solid {COLORS['border1']};
-            border-radius: 12px;
-            background: {COLORS['bg2']};
-        }}
-    """
-
-def card_border_pos():
-    return f"""
-        ImageCard {{
-            border: 2px solid {COLORS['pos']};
-            border-radius: 12px;
-            background: {COLORS['bg2']};
-        }}
-    """
-
-def card_border_green():
-    return card_border_pos()
-
-def card_border_red():
-    return f"""
-        ImageCard {{
-            border: 2px solid {COLORS['neg']};
             border-radius: 12px;
             background: {COLORS['bg2']};
         }}
@@ -54,58 +31,6 @@ def close_button():
         }}
         QPushButton:hover {{
             background: {COLORS['danger_hover']};
-        }}
-    """
-
-def checkpoint_label():
-    return f"font-size: 14px; font-weight: bold; color: {COLORS['text1']}; background: transparent;"
-
-def score_label():
-    return f"""
-        color: {COLORS['score']};
-        font-size: 20px;
-        font-weight: bold;
-        border: 2px solid {COLORS['score_border']};
-        border-radius: 6px;
-        background: transparent;
-    """
-
-def criterion_button_neutral():
-    return f"""
-        QPushButton {{
-            background: {COLORS['bg3']};
-            color: {COLORS['crit1']};
-            border: 1px solid {COLORS['crit1']};
-            border-radius: 6px;
-        }}
-        QPushButton:hover {{
-            background: {COLORS['border1']};
-        }}
-    """
-
-def criterion_button_green():
-    return f"""
-        QPushButton {{
-            background: {COLORS['pos_bg']};
-            color: {COLORS['pos']};
-            border: 1px solid {COLORS['pos']};
-            border-radius: 6px;
-        }}
-        QPushButton:hover {{
-            background: {COLORS['pos_hover']};
-        }}
-    """
-
-def criterion_button_red():
-    return f"""
-        QPushButton {{
-            background: {COLORS['neg_bg']};
-            color: {COLORS['neg']};
-            border: 1px solid {COLORS['neg']};
-            border-radius: 6px;
-        }}
-        QPushButton:hover {{
-            background: {COLORS['neg_hover']};
         }}
     """
 

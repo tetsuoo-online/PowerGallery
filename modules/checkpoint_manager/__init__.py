@@ -11,6 +11,15 @@ def _get_styles():
     from config.settings import config
     return config.get_styles()
 
+def _get_colors():
+    """Return base COLORS merged with the active module style (built-in or custom)."""
+    from config.settings import config
+    return config.get_merged_colors()
+
+def _get_mod_style():
+    from modules.checkpoint_manager import style as _mod_style
+    return _mod_style
+
 
 CRITERIA_LIST = ["beauty", "noErrors", "loras", "Pos prompt", "Neg prompt"]
 
@@ -92,14 +101,17 @@ class CheckpointManager:
 
     @staticmethod
     def populate_card_top(card, top_layout):
+        mod_style = _get_mod_style()
+        colors = _get_colors()
+
         card.checkpoint_label = QLabel(card.checkpoint_name)
         card.checkpoint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        card.checkpoint_label.setStyleSheet(_get_styles().checkpoint_label())
+        card.checkpoint_label.setStyleSheet(mod_style.checkpoint_label(colors))
 
         card.score_label = QLabel(str(card.module_data.get('score', 0)))
         card.score_label.setFixedSize(40, 40)
         card.score_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        card.score_label.setStyleSheet(_get_styles().score_label())
+        card.score_label.setStyleSheet(mod_style.score_label(colors))
 
         top_layout.addWidget(card.checkpoint_label)
         top_layout.addStretch()
@@ -137,31 +149,34 @@ class CheckpointManager:
 
     @staticmethod
     def _style_btn(button, state):
-        styles = _get_styles()
+        mod_style = _get_mod_style()
+        colors = _get_colors()
         if state == 1:
-            button.setStyleSheet(styles.criterion_button_green())
+            button.setStyleSheet(mod_style.criterion_button_green(colors))
         elif state == -1:
-            button.setStyleSheet(styles.criterion_button_red())
+            button.setStyleSheet(mod_style.criterion_button_red(colors))
         else:
-            button.setStyleSheet(styles.criterion_button_neutral())
+            button.setStyleSheet(mod_style.criterion_button_neutral(colors))
 
     @staticmethod
     def apply_card_styles(card):
-        styles = _get_styles()
+        base_styles = _get_styles()
+        mod_style = _get_mod_style()
+        colors = _get_colors()
         score = card.module_data.get('score', 0)
 
         if score > 0:
-            card.setStyleSheet(styles.card_border_green())
+            card.setStyleSheet(mod_style.card_border_pos(colors))
         elif score < 0:
-            card.setStyleSheet(styles.card_border_red())
+            card.setStyleSheet(mod_style.card_border_red(colors))
         else:
-            card.setStyleSheet(styles.card_style())
+            card.setStyleSheet(base_styles.card_style())
 
         if hasattr(card, 'score_label'):
             card.score_label.setText(str(score))
-            card.score_label.setStyleSheet(styles.score_label())
+            card.score_label.setStyleSheet(mod_style.score_label(colors))
         if hasattr(card, 'checkpoint_label'):
-            card.checkpoint_label.setStyleSheet(styles.checkpoint_label())
+            card.checkpoint_label.setStyleSheet(mod_style.checkpoint_label(colors))
         if hasattr(card, 'criteria_buttons'):
             criteria = card.module_data.get('criteria', {})
             for criterion, btn in card.criteria_buttons.items():

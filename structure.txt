@@ -1,21 +1,36 @@
 v9/
+├── assets/
+│   ├── 2026-03-27_08_56_34-PowerGallery_V9.webp
+│   ├── 2026-03-27_09_52_07-PowerGallery_V9.webp
+│   ├── FullscreenView_1.webp
+│   ├── Options.webp
+│   └── style_editor.webp
 ├── config/
 │   ├── custom_styles/
 │   │   ├── __init__.py
 │   │   ├── BloodyMary_v3.py
 │   │   ├── light_v2.py
-│   │   └── light_v3.py
+│   │   ├── light_v3.py
+│   │   └── v4.py
 │   ├── lang/
 │   │   ├── flags/
+│   │   │   ├── arab.gif
+│   │   │   ├── cn.gif
 │   │   │   ├── de.gif
 │   │   │   ├── en.gif
 │   │   │   ├── esp.gif
-│   │   │   └── fr.gif
+│   │   │   ├── fr.gif
+│   │   │   ├── jp.gif
+│   │   │   └── pt_BR.gif
 │   │   ├── __init__.py
+│   │   ├── arab.py
+│   │   ├── cn.py
 │   │   ├── de.py
 │   │   ├── en.py
 │   │   ├── esp.py
-│   │   └── fr.py
+│   │   ├── fr.py
+│   │   ├── jp.py
+│   │   └── pt_BR.py
 │   ├── __init__.py
 │   ├── options_style.py
 │   ├── settings.json
@@ -25,8 +40,16 @@ v9/
 │   ├── styles_dark.py
 │   └── styles_light.py
 ├── modules/
-│   ├── __init__.py
-│   ├── checkpoint_manager.py
+│   ├── checkpoint_manager/
+│   │   ├── custom/
+│   │   │   ├── __init__.py
+│   │   │   └── new1.py
+│   │   ├── __init__.py
+│   │   └── style.py
+│   ├── dataset_manager/
+│   │   ├── custom/
+│   │   │   └── __init__.py
+│   │   └── __init__.py
 │   └── dataset_manager.py
 ├── widgets/
 │   ├── __init__.py
@@ -36,5 +59,6 @@ v9/
 ├── LICENSE
 ├── power_gallery.py
 ├── pyproject.toml
+├── README.md
 ├── START.BAT
 └── structure.txt
