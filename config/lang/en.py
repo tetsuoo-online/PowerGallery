@@ -110,4 +110,10 @@ LANG = {
     'hover_add_tab': 'Add a tab',
     'hover_remove_tabs': 'Remove all tabs',
     'hover_clear_tab': 'Clear all cards',
+    # Title / Description fields
+    'options_show_title': 'Title field',
+    'options_show_description': 'Description field',
+    'card_title_placeholder': 'Title...',
+    'card_description_placeholder': 'Description...',
+    'options_fullscreen_opacity': 'Fullscreen opacity',
 }

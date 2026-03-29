@@ -23,6 +23,9 @@ _DEFAULTS = {
     'selected_module': None,
     'current_style': 'dark',
     'dataset_clear_if_empty': False,
+    'show_title': False,
+    'show_description': False,
+    'fullscreen_opacity': 100,
 }
 
 

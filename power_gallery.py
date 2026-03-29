@@ -134,6 +134,31 @@ class OptionsDialog(QDialog):
         self.auto_load_last.setChecked(config.get('auto_load_last'))
         self.auto_save_session = QCheckBox(config.get_text('options_auto_save_session'))
         self.auto_save_session.setChecked(config.get('auto_save_session'))
+        self.show_title = QCheckBox(config.get_text('options_show_title'))
+        self.show_title.setChecked(config.get('show_title') or False)
+        self.show_description = QCheckBox(config.get_text('options_show_description'))
+        self.show_description.setChecked(config.get('show_description') or False)
+
+        # Fullscreen opacity
+        opacity_row = QHBoxLayout()
+        opacity_label = QLabel(config.get_text('options_fullscreen_opacity') + ":")
+        self.opacity_slider = QSlider(Qt.Orientation.Horizontal)
+        self.opacity_slider.setMinimum(1)
+        self.opacity_slider.setMaximum(100)
+        self.opacity_slider.setValue(config.get('fullscreen_opacity') or 100)
+        self.opacity_slider.setFixedWidth(120)
+        self.opacity_spinbox = QLineEdit(str(self.opacity_slider.value()))
+        self.opacity_spinbox.setFixedWidth(40)
+        self.opacity_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.opacity_slider.valueChanged.connect(lambda v: self.opacity_spinbox.setText(str(v)))
+        self.opacity_spinbox.editingFinished.connect(self._sync_opacity_spinbox)
+        opacity_row.addWidget(opacity_label)
+        opacity_row.addWidget(self.opacity_slider)
+        opacity_row.addWidget(self.opacity_spinbox)
+        opacity_row.addWidget(QLabel("%"))
+        opacity_row.addStretch()
+        opacity_widget = QWidget()
+        opacity_widget.setLayout(opacity_row)
 
         # Hover descriptions
         self._install_option_hover(import_group, 'hint_import_mode')
@@ -146,6 +171,9 @@ class OptionsDialog(QDialog):
         layout.addWidget(self.import_in_tabs)
         layout.addWidget(self.auto_load_last)
         layout.addWidget(self.auto_save_session)
+        layout.addWidget(self.show_title)
+        layout.addWidget(self.show_description)
+        layout.addWidget(opacity_widget)
         layout.addStretch()
         tab.setLayout(layout)
         return tab
@@ -228,6 +256,14 @@ class OptionsDialog(QDialog):
             item.setIcon(QIcon(placeholder))
         return item
 
+    def _sync_opacity_spinbox(self):
+        try:
+            v = max(1, min(100, int(self.opacity_spinbox.text())))
+        except ValueError:
+            v = self.opacity_slider.value()
+        self.opacity_slider.setValue(v)
+        self.opacity_spinbox.setText(str(v))
+
     def save_and_close(self):
         old_lang = config.get('language')
         selected_lang_item = self.lang_list.currentItem()
@@ -237,6 +273,9 @@ class OptionsDialog(QDialog):
         config.set_import_in_tabs(self.import_in_tabs.isChecked())
         config.set_auto_load_last(self.auto_load_last.isChecked())
         config.set_auto_save_session(self.auto_save_session.isChecked())
+        config.set('show_title', self.show_title.isChecked())
+        config.set('show_description', self.show_description.isChecked())
+        config.set('fullscreen_opacity', self.opacity_slider.value())
 
         selected_module = next(
             (key for key, cb in self.module_checkboxes.items() if cb.isChecked()), None)
@@ -294,6 +333,10 @@ class ImageCard(QFrame):
         layout.setSpacing(3)
 
         top_container = QWidget()
+        top_outer = QVBoxLayout()
+        top_outer.setContentsMargins(0, 0, 0, 0)
+        top_outer.setSpacing(2)
+
         top_layout = QHBoxLayout()
         top_layout.setContentsMargins(0, 0, 0, 0)
         self.close_btn = QPushButton("×")
@@ -307,7 +350,23 @@ class ImageCard(QFrame):
         if module and hasattr(module, 'populate_card_top'):
             module.populate_card_top(self, top_layout)
 
-        top_container.setLayout(top_layout)
+        top_outer.addLayout(top_layout)
+
+        # Title field — ligne 2 dans le top
+        self.title_edit = None
+        if config.get('show_title'):
+            self.title_edit = QLineEdit()
+            self.title_edit.setPlaceholderText(config.get_text('card_title_placeholder'))
+            self.title_edit.setText(self.raw_json_data.get('title', ''))
+            self.title_edit.setStyleSheet(
+                "QLineEdit { background: transparent; border: none; "
+                "border-bottom: 1px solid #666; color: #cccccc; "
+                "font-size: 11px; padding: 1px 3px; }"
+                "QLineEdit:focus { border-bottom: 1px solid #2196F3; }"
+            )
+            top_outer.addWidget(self.title_edit)
+
+        top_container.setLayout(top_outer)
 
         image_container = QWidget()
         img_layout = QHBoxLayout()
@@ -329,6 +388,29 @@ class ImageCard(QFrame):
         bottom_widget = None
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
+
+        # Description field
+        self.description_edit = None
+        if config.get('show_description'):
+            self.description_edit = QTextEdit()
+            self.description_edit.setFixedHeight(55)
+            self.description_edit.setPlaceholderText(config.get_text('card_description_placeholder'))
+            self.description_edit.setPlainText(self.raw_json_data.get('description', ''))
+            self.description_edit.setStyleSheet(
+                "QTextEdit { background: #1e1e1e; color: #cccccc; border: 1px solid #444; "
+                "border-radius: 4px; font-size: 11px; padding: 2px; }"
+            )
+            if bottom_widget is None:
+                bottom_widget = self.description_edit
+            else:
+                wrapper = QWidget()
+                wl = QVBoxLayout()
+                wl.setContentsMargins(0, 0, 0, 0)
+                wl.setSpacing(3)
+                wl.addWidget(bottom_widget)
+                wl.addWidget(self.description_edit)
+                wrapper.setLayout(wl)
+                bottom_widget = wrapper
 
         self._top_container = top_container
         self._image_container = image_container
@@ -926,6 +1008,10 @@ class GridTab(QWidget):
         data = {"card_size": self.card_size, "images": []}
         for card in self.cards:
             card_data = {"absolutePath": card.image_path}
+            if config.get('show_title') and hasattr(card, 'title_edit') and card.title_edit:
+                card_data['title'] = card.title_edit.text()
+            if config.get('show_description') and hasattr(card, 'description_edit') and card.description_edit:
+                card_data['description'] = card.description_edit.toPlainText()
             if module and hasattr(module, 'card_to_json'):
                 card_data.update(module.card_to_json(card))
             data["images"].append(card_data)
@@ -1115,7 +1201,10 @@ class FullscreenViewer(QWidget):
 
         self.setWindowTitle("Fullscreen View")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
-        self.setStyleSheet(get_styles().fullscreen_background())
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self._bg_opacity = (config.get('fullscreen_opacity') or 100) / 100.0
+        canvas = get_styles().COLORS.get('canvas', '#000000').strip()
+        self._bg_color = QColor(canvas) if QColor(canvas).isValid() else QColor(0, 0, 0)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -1166,7 +1255,7 @@ class FullscreenViewer(QWidget):
 
         self.image_container = QLabel()
         self.image_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_container.setStyleSheet(get_styles().image_container())
+        self.image_container.setStyleSheet("background: transparent;")
         self.image_container.mousePressEvent = self.mouse_press_on_image
         self.image_container.mouseMoveEvent = self.mouse_move_on_image
         self.image_container.mouseReleaseEvent = self.mouseReleaseEvent
@@ -1309,6 +1398,13 @@ class FullscreenViewer(QWidget):
                 self.comparison_pixmap = pixmap2
                 self.image_container.update()
             self.update_info_label()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        color = QColor(self._bg_color)
+        color.setAlphaF(self._bg_opacity)
+        painter.fillRect(self.rect(), color)
+        painter.end()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:

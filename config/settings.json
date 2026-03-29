@@ -5,10 +5,13 @@
   "auto_load_last": true,
   "auto_save_session": true,
   "selected_module": "dataset",
-  "current_style": "light_v3",
+  "current_style": "dark",
   "dataset_clear_if_empty": true,
+  "show_title": true,
+  "show_description": true,
+  "fullscreen_opacity": 0,
   "last_session": [
     "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-A_20260325-054535_Anima_Dataset.json",
-    "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-A_20260325-020911_NoModule.json"
+    "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-B_20260328-223245+Dataset.json"
   ]
 }

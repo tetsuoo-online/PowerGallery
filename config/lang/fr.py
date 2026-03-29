@@ -110,4 +110,10 @@ LANG = {
     'hover_add_tab': 'Ajouter un onglet',
     'hover_remove_tabs': 'Supprimer tous les onglets',
     'hover_clear_tab': 'Vider toutes les cartes',
+    # Champs Titre / Description
+    'options_show_title': 'Champ Titre',
+    'options_show_description': 'Champ Description',
+    'card_title_placeholder': 'Titre...',
+    'card_description_placeholder': 'Description...',
+    'options_fullscreen_opacity': 'Opacité plein écran',
 }
