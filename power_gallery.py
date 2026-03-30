@@ -1,6 +1,10 @@
 import sys
 import json
 import os
+import re
+import struct
+import zlib
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
@@ -25,6 +29,284 @@ MODULE_REGISTRY = {
     'checkpoint_manager': CheckpointManager,
     'dataset': DatasetManager,
 }
+
+
+# ── Metadata reader ───────────────────────────────────────────────────────────
+
+# exiftool path — tools/exiftool.exe next to power_gallery.py
+_EXIFTOOL_PATH = Path(__file__).parent / 'tools' / 'exiftool.exe'
+
+
+def _exiftool_available():
+    return _EXIFTOOL_PATH.exists()
+
+
+def _read_via_exiftool(image_path):
+    """
+    Run exiftool -json on the file, return a flat dict of tag→value strings.
+    Returns {} on any error or if exiftool is not found.
+    """
+    if not _exiftool_available():
+        return {}
+    try:
+        result = subprocess.run(
+            [str(_EXIFTOOL_PATH), '-json', '-charset', 'utf8', str(image_path)],
+            capture_output=True, timeout=10,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        )
+        if result.returncode != 0:
+            return {}
+        data = json.loads(result.stdout.decode('utf-8', errors='replace'))
+        if data:
+            # exiftool returns a list with one entry per file
+            return {k: str(v) for k, v in data[0].items() if not k.startswith('SourceFile')}
+    except Exception as e:
+        print(f"[exiftool] {image_path}: {e}")
+    return {}
+
+
+def _read_png_chunks(path):
+    """Parse PNG text chunks (tEXt, iTXt, zTXt) — fast, no external tool needed."""
+    meta = {}
+    data = path.read_bytes()
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        return meta
+    pos = 8
+    while pos < len(data):
+        if pos + 8 > len(data):
+            break
+        length = struct.unpack('>I', data[pos:pos+4])[0]
+        chunk_type = data[pos+4:pos+8]
+        chunk_data = data[pos+8:pos+8+length]
+        pos += 12 + length
+
+        if chunk_type == b'tEXt':
+            try:
+                null = chunk_data.index(b'\x00')
+                meta[chunk_data[:null].decode('latin-1')] = chunk_data[null+1:].decode('latin-1')
+            except Exception:
+                pass
+        elif chunk_type == b'iTXt':
+            try:
+                null = chunk_data.index(b'\x00')
+                key = chunk_data[:null].decode('utf-8')
+                rest = chunk_data[null+1:]
+                compress_flag = rest[0]
+                rest = rest[2:]
+                rest = rest[rest.index(b'\x00')+1:]
+                value_bytes = rest[rest.index(b'\x00')+1:]
+                if compress_flag:
+                    value_bytes = zlib.decompress(value_bytes)
+                meta[key] = value_bytes.decode('utf-8')
+            except Exception:
+                pass
+        elif chunk_type == b'zTXt':
+            try:
+                null = chunk_data.index(b'\x00')
+                key = chunk_data[:null].decode('latin-1')
+                meta[key] = zlib.decompress(chunk_data[null+2:]).decode('latin-1')
+            except Exception:
+                pass
+    return meta
+
+
+def read_image_metadata(image_path):
+    """
+    Strategy:
+      PNG  → parse chunks directly (fast, reliable for SD) + optionally enrich via exiftool
+      JPEG → exiftool only
+      WebP → exiftool only (manual RIFF parsing was unreliable)
+    Returns a normalised dict (canonical SD field names).
+    """
+    path = Path(image_path)
+    ext = path.suffix.lower()
+    raw = {}
+
+    try:
+        if ext == '.png':
+            raw = _read_png_chunks(path)
+            # If exiftool available, merge extra fields (EXIF, XMP) that chunks don't cover
+            if _exiftool_available():
+                et = _read_via_exiftool(image_path)
+                # PNG chunks have priority for SD params; exiftool fills gaps
+                for k, v in et.items():
+                    if k not in raw:
+                        raw[k] = v
+        elif ext in ('.jpg', '.jpeg', '.webp'):
+            raw = _read_via_exiftool(image_path)
+            if not raw:
+                raw['_no_exiftool'] = (
+                    'exiftool not found. Place exiftool.exe in tools/ to read JPEG/WebP metadata.'
+                )
+    except Exception as e:
+        print(f"[metadata] Error reading {image_path}: {e}")
+
+    return parse_sd_metadata(raw)
+
+
+def parse_sd_metadata(raw):
+    """
+    Normalise raw metadata dict into canonical SD field names.
+    Handles both PNG-chunk keys and exiftool-style keys.
+    """
+    result = {}
+
+    # ── SD parameters string (PNG chunks / exiftool UserComment / Description) ──
+    params_str = (
+        raw.get('parameters') or
+        raw.get('Parameters') or
+        raw.get('UserComment') or
+        raw.get('Comment') or
+        raw.get('ImageDescription') or
+        raw.get('Description') or
+        ''
+    )
+
+    if params_str and not params_str.startswith('exiftool'):
+        result['_raw_parameters'] = params_str
+        _parse_sd_params_string(params_str, result)
+
+    # ── Direct exiftool field mappings (JPEG / WebP EXIF/XMP) ──────────────────
+    _map = {
+        'Model':          ('model',   result.get('model')),
+        'Make':           ('make',    None),
+        'Software':       ('software',None),
+        'ExifImageWidth': ('width',   None),
+        'ExifImageHeight':('height',  None),
+        'CreateDate':     ('date',    None),
+        'XMP:Description':('xmp_desc',None),
+        'XMP:Subject':    ('xmp_subject', None),
+        'IPTC:Caption-Abstract': ('iptc_caption', None),
+    }
+    for et_key, (canon_key, existing) in _map.items():
+        if et_key in raw and not existing:
+            result[canon_key] = raw[et_key]
+
+    # ── Pass-through: keep any unrecognised exiftool field with its original name ─
+    _known_raw = {'parameters', 'Parameters', 'UserComment', 'Comment',
+                  'ImageDescription', 'Description', '_no_exiftool'}
+    for k, v in raw.items():
+        if k not in _known_raw and k not in result:
+            # Only surface fields that look useful (skip binary blobs etc.)
+            if isinstance(v, str) and len(v) < 1000 and not k.startswith('_'):
+                result[f'_{k}'] = v
+
+    # Surface no-exiftool warning
+    if '_no_exiftool' in raw:
+        result['_warning'] = raw['_no_exiftool']
+
+    return result
+
+
+def _parse_sd_params_string(params_str, result):
+    """
+    Parse the SD 'parameters' text block into result dict.
+    Format:  <prompt>\nNegative prompt: <neg>\nSteps: X, Sampler: Y, CFG scale: Z, ...
+    """
+    lines = params_str.strip().split('\n')
+
+    neg_idx   = next((i for i, l in enumerate(lines)
+                      if l.strip().lower().startswith('negative prompt:')), None)
+    steps_idx = next((i for i, l in enumerate(lines)
+                      if l.strip().lower().startswith('steps:')), None)
+
+    if neg_idx is not None:
+        result['prompt'] = '\n'.join(lines[:neg_idx]).strip()
+        end = steps_idx if (steps_idx is not None and steps_idx > neg_idx) else len(lines)
+        result['negative_prompt'] = (
+            '\n'.join(lines[neg_idx:end])
+            .replace('Negative prompt:', '', 1).strip()
+        )
+    elif steps_idx is not None:
+        result['prompt'] = '\n'.join(lines[:steps_idx]).strip()
+    else:
+        result['prompt'] = params_str.strip()
+
+    settings_line = ' '.join(lines[steps_idx:]) if steps_idx is not None else ''
+    _parse_sd_settings(settings_line, result)
+
+
+def _parse_sd_settings(line, result):
+    """Parse 'Steps: X, Sampler: Y, CFG scale: Z, ...' into result dict."""
+    patterns = {
+        'steps':      r'Steps:\s*(\d+)',
+        'sampler':    r'Sampler:\s*([^,]+)',
+        'cfg':        r'CFG scale:\s*([\d.]+)',
+        'seed':       r'Seed:\s*(\d+)',
+        'size':       r'Size:\s*([^\s,]+)',
+        'model':      r'Model:\s*([^,]+)',
+        'model_hash': r'Model hash:\s*([^,]+)',
+        'vae':        r'VAE:\s*([^,]+)',
+        'clip_skip':  r'Clip skip:\s*(\d+)',
+        'lora_hashes':r'Lora hashes:\s*"([^"]+)"',
+        'scheduler':  r'Schedule type:\s*([^,]+)',
+        'distilled_cfg': r'Distilled CFG Scale:\s*([\d.]+)',
+    }
+    for key, pattern in patterns.items():
+        if key not in result:  # don't overwrite values already set
+            m = re.search(pattern, line, re.IGNORECASE)
+            if m:
+                result[key] = m.group(1).strip()
+
+
+def format_metadata_for_display(card):
+    """
+    Format card.all_metadata into a human-readable string for the fullscreen overlay.
+    Priority fields first, then prompt/neg, then any extra exiftool fields.
+    """
+    meta = getattr(card, 'all_metadata', {})
+    if not meta:
+        return ""
+
+    lines = []
+
+    # Warning (e.g. exiftool missing)
+    if '_warning' in meta:
+        lines.append(f"⚠ {meta['_warning']}")
+        lines.append('')
+
+    priority = [
+        ('model',        'Model'),
+        ('sampler',      'Sampler'),
+        ('scheduler',    'Schedule'),
+        ('steps',        'Steps'),
+        ('cfg',          'CFG'),
+        ('distilled_cfg','Distilled CFG'),
+        ('seed',         'Seed'),
+        ('size',         'Size'),
+        ('vae',          'VAE'),
+        ('clip_skip',    'Clip skip'),
+        ('lora_hashes',  'LoRAs'),
+        ('software',     'Software'),
+        ('date',         'Date'),
+    ]
+    for key, label in priority:
+        if key in meta:
+            lines.append(f"{label}: {meta[key]}")
+
+    if 'prompt' in meta:
+        p = meta['prompt']
+        if len(p) > 250:
+            p = p[:250] + '…'
+        lines.append(f"\nPrompt:\n{p}")
+
+    if 'negative_prompt' in meta:
+        n = meta['negative_prompt']
+        if len(n) > 180:
+            n = n[:180] + '…'
+        lines.append(f"\nNeg:\n{n}")
+
+    # Extra exiftool pass-through fields (prefixed with _)
+    extras = [(k[1:], v) for k, v in meta.items()
+              if k.startswith('_') and k not in ('_raw_parameters', '_warning')]
+    if extras:
+        lines.append('\n— Extra —')
+        for k, v in extras[:12]:  # cap at 12 extra fields
+            if len(v) > 80:
+                v = v[:80] + '…'
+            lines.append(f"{k}: {v}")
+
+    return '\n'.join(lines)
 
 
 # ── Tab widget ────────────────────────────────────────────────────────────────
@@ -52,7 +334,6 @@ class OptionsDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Snapshot styles at open — restored if user closes with the X
         self._initial_style = config.get('current_style')
         self._initial_module_style = config.get('current_module_style')
         self.setWindowTitle(config.get_text('options_title'))
@@ -67,14 +348,12 @@ class OptionsDialog(QDialog):
         self.tabs.addTab(self.create_personalization_tab(), config.get_text('options_tab_style'))
         self.tabs.addTab(self.create_modules_tab(), config.get_text('options_tab_modules'))
 
-        # Info bar
         info_row = QHBoxLayout()
         info_row.setContentsMargins(4, 0, 4, 0)
         info_icon = QLabel("ℹ️")
         self.options_info_label = QLabel("")
         self.options_info_label.setStyleSheet("color: #888; font-style: italic;")
         self.options_info_label.setWordWrap(True)
-        # Resserrer l'interligne via font
         _font = self.options_info_label.font()
         self.options_info_label.setFont(_font)
         info_row.addWidget(info_icon, 0, Qt.AlignmentFlag.AlignTop)
@@ -141,6 +420,8 @@ class OptionsDialog(QDialog):
         self.show_title.setChecked(config.get('show_title') or False)
         self.show_description = QCheckBox(config.get_text('options_show_description'))
         self.show_description.setChecked(config.get('show_description') or False)
+        self.read_metadata = QCheckBox(config.get_text('options_read_metadata'))
+        self.read_metadata.setChecked(config.get('read_metadata') or False)
 
         # Fullscreen opacity
         opacity_row = QHBoxLayout()
@@ -163,11 +444,11 @@ class OptionsDialog(QDialog):
         opacity_widget = QWidget()
         opacity_widget.setLayout(opacity_row)
 
-        # Hover descriptions
         self._install_option_hover(import_group, 'hint_import_mode')
         self._install_option_hover(self.import_in_tabs, 'hint_import_in_tabs')
         self._install_option_hover(self.auto_load_last, 'hint_auto_load_last')
         self._install_option_hover(self.auto_save_session, 'hint_auto_save_session')
+        self._install_option_hover(self.read_metadata, 'hint_read_metadata')
 
         layout.addWidget(lang_group)
         layout.addWidget(import_group)
@@ -176,6 +457,7 @@ class OptionsDialog(QDialog):
         layout.addWidget(self.auto_save_session)
         layout.addWidget(self.show_title)
         layout.addWidget(self.show_description)
+        layout.addWidget(self.read_metadata)
         layout.addWidget(opacity_widget)
         layout.addStretch()
         tab.setLayout(layout)
@@ -220,7 +502,6 @@ class OptionsDialog(QDialog):
                 for c in self.module_checkboxes.values():
                     c.setChecked(False)
             elif not any(c.isChecked() for c in self.module_checkboxes.values()):
-                # prevent unchecking when nothing else is selected
                 self.module_none.setChecked(True)
 
         def make_exclusive(selected_key):
@@ -285,6 +566,7 @@ class OptionsDialog(QDialog):
         config.set_auto_save_session(self.auto_save_session.isChecked())
         config.set('show_title', self.show_title.isChecked())
         config.set('show_description', self.show_description.isChecked())
+        config.set('read_metadata', self.read_metadata.isChecked())
         config.set('fullscreen_opacity', self.opacity_slider.value())
 
         selected_module = next(
@@ -345,6 +627,7 @@ class ImageCard(QFrame):
         self.source_json = source_json
         self.module_data = module_data or {}
         self.raw_json_data = raw_json_data or {}
+        self.all_metadata = {}  # populated after init if read_metadata is enabled
 
         self.setFrameStyle(QFrame.Shape.Box)
         self.setLineWidth(2)
@@ -358,6 +641,10 @@ class ImageCard(QFrame):
         self.setStyleSheet(get_styles().card_style())
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.details_popup = None
+
+        # Read metadata if enabled
+        if config.get('read_metadata'):
+            self.all_metadata = read_image_metadata(image_path)
 
         self.setup_ui()
 
@@ -390,7 +677,6 @@ class ImageCard(QFrame):
 
         top_outer.addLayout(top_layout)
 
-        # Title field — ligne 2 dans le top
         self.title_edit = None
         if config.get('show_title'):
             self.title_edit = QLineEdit()
@@ -427,7 +713,6 @@ class ImageCard(QFrame):
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
 
-        # Description field
         self.description_edit = None
         if config.get('show_description'):
             self.description_edit = QTextEdit()
@@ -589,7 +874,6 @@ class GridTab(QWidget):
     def setup_ui(self):
         main_layout = QVBoxLayout()
 
-        # Controls row 1
         controls1 = QHBoxLayout()
         self.controls1_widget = QWidget()
         self.controls1_widget.setLayout(controls1)
@@ -630,7 +914,6 @@ class GridTab(QWidget):
         controls1.addWidget(self.clear_btn)
         controls1.addStretch()
 
-        # Controls row 2
         controls2 = QHBoxLayout()
         self.controls2_widget = QWidget()
         self.controls2_widget.setLayout(controls2)
@@ -644,8 +927,8 @@ class GridTab(QWidget):
         self._hover_label = QLabel("")
         self._hover_label.setMinimumWidth(300)
         self._log_stack = QStackedWidget()
-        self._log_stack.addWidget(self.log_label)    # index 0 — état normal
-        self._log_stack.addWidget(self._hover_label) # index 1 — survol bouton
+        self._log_stack.addWidget(self.log_label)
+        self._log_stack.addWidget(self._hover_label)
         self.size_label = QLabel(config.get_text('slider_label') + ":")
         self.size_slider = QSlider(Qt.Orientation.Horizontal)
         self.size_slider.setMinimum(210)
@@ -660,7 +943,6 @@ class GridTab(QWidget):
         controls2.addWidget(self.size_label)
         controls2.addWidget(self.size_slider)
 
-        # Drop zone
         self.drop_zone = QLabel(config.get_text('drop_zone_text'))
         self.drop_zone.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.drop_zone.setStyleSheet(get_styles().drop_zone())
@@ -669,7 +951,6 @@ class GridTab(QWidget):
         self.drop_zone.dropEvent = self.drop_zone_drop
         self.drop_zone.mousePressEvent = self.drop_zone_click
 
-        # Scroll area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.close_active_dialog)
@@ -1246,6 +1527,91 @@ class GridTab(QWidget):
             super().keyPressEvent(event)
 
 
+# ── Metadata overlay widget ───────────────────────────────────────────────────
+
+class MetadataOverlay(QWidget):
+    """
+    Semi-transparent overlay panel showing image metadata.
+    Drawn on top of the image_container using absolute positioning.
+    side: 'left' | 'right'
+    """
+    PANEL_WIDTH = 320
+    PANEL_OPACITY = 0.55  # background opacity (0..1)
+
+    def __init__(self, parent, side='left'):
+        super().__init__(parent)
+        self.side = side
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self._text = ""
+        self._visible = False
+        self.setVisible(False)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(4)
+
+        self.text_label = QLabel()
+        self.text_label.setWordWrap(True)
+        self.text_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.text_label.setStyleSheet(
+            "color: white; font-size: 11px; background: transparent;"
+        )
+        self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        scroll = QScrollArea()
+        scroll.setWidget(self.text_label)
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        scroll.viewport().setStyleSheet("background: transparent;")
+
+        layout.addWidget(scroll)
+        self.setLayout(layout)
+
+    def set_text(self, text):
+        self._text = text
+        self.text_label.setText(text)
+
+    def toggle(self):
+        self._visible = not self._visible
+        self.setVisible(self._visible)
+        if self._visible:
+            self._reposition()
+
+    def show_panel(self):
+        self._visible = True
+        self.setVisible(True)
+        self._reposition()
+
+    def hide_panel(self):
+        self._visible = False
+        self.setVisible(False)
+
+    def _reposition(self):
+        parent = self.parent()
+        if not parent:
+            return
+        h = parent.height()
+        w = self.PANEL_WIDTH
+        margin = 10
+        if self.side == 'left':
+            self.setGeometry(margin, margin, w, h - 2 * margin)
+        else:
+            self.setGeometry(parent.width() - w - margin, margin, w, h - 2 * margin)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        color = QColor(0, 0, 0, int(255 * self.PANEL_OPACITY))
+        painter.setBrush(color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(self.rect(), 10, 10)
+        painter.end()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+
 # ── Fullscreen viewer ─────────────────────────────────────────────────────────
 
 class FullscreenViewer(QWidget):
@@ -1317,6 +1683,7 @@ class FullscreenViewer(QWidget):
         info_layout.addStretch()
         info_layout.addWidget(self.info_label2)
 
+        # Image container — metadata overlays are children of this widget
         self.image_container = QLabel()
         self.image_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_container.setStyleSheet("background: transparent;")
@@ -1324,6 +1691,11 @@ class FullscreenViewer(QWidget):
         self.image_container.mouseMoveEvent = self.mouse_move_on_image
         self.image_container.mouseReleaseEvent = self.mouseReleaseEvent
         self.image_container.paintEvent = self.paint_image
+        self.image_container.resizeEvent = self._on_image_container_resize
+
+        # Metadata overlays
+        self.meta_overlay_left = MetadataOverlay(self.image_container, side='left')
+        self.meta_overlay_right = MetadataOverlay(self.image_container, side='right')
 
         layout.addLayout(top_bar)
         layout.addWidget(self.image_container, stretch=1)
@@ -1331,7 +1703,31 @@ class FullscreenViewer(QWidget):
         self.setLayout(layout)
 
         self.update_info_label()
+        self._update_meta_overlay_left()
         self.grid_combo.currentIndexChanged.connect(self.on_grid_changed)
+
+    def _on_image_container_resize(self, event):
+        # Reposition overlays when container resizes
+        if self.meta_overlay_left.isVisible():
+            self.meta_overlay_left._reposition()
+        if self.meta_overlay_right.isVisible():
+            self.meta_overlay_right._reposition()
+
+    def _update_meta_overlay_left(self):
+        if not config.get('read_metadata'):
+            self.meta_overlay_left.hide_panel()
+            return
+        text = format_metadata_for_display(self.card)
+        self.meta_overlay_left.set_text(text)
+        # Don't auto-show — user toggles with click
+
+    def _update_meta_overlay_right(self):
+        if not config.get('read_metadata') or not self.comparison_card:
+            self.meta_overlay_right.hide_panel()
+            return
+        text = format_metadata_for_display(self.comparison_card)
+        self.meta_overlay_right.set_text(text)
+        # Don't auto-show — user toggles with click
 
     def paint_image(self, event):
         if self.main_pixmap.isNull():
@@ -1385,6 +1781,7 @@ class FullscreenViewer(QWidget):
             self.info_label2.setVisible(False)
             self.comparison_card = None
             self.comparison_pixmap = None
+            self.meta_overlay_right.hide_panel()
         else:
             if selected_tab.cards:
                 self.comparison_card = selected_tab.cards[0]
@@ -1394,16 +1791,47 @@ class FullscreenViewer(QWidget):
                 self.info_label2.setVisible(True)
                 self.split_position = 0.5
                 self.update_info_label()
+                self._update_meta_overlay_right()
         self.image_container.update()
 
     def mouse_press_on_image(self, event):
-        if self.comparison_pixmap:
-            self.dragging_split = True
-            self.update_split_from_mouse(event.pos().x())
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self.comparison_pixmap:
+                # Check if click is near split handle → drag, else toggle metadata
+                mouse_x = event.pos().x()
+                split_x = int(self.image_x_offset + self.image_width * self.split_position)
+                if abs(mouse_x - split_x) < 30:
+                    self.dragging_split = True
+                    self.update_split_from_mouse(mouse_x)
+                else:
+                    # Toggle metadata overlays based on which side was clicked
+                    self._toggle_meta_from_click(mouse_x)
+            else:
+                self._toggle_meta_left()
+
+    def _toggle_meta_from_click(self, mouse_x):
+        """Toggle left or right overlay based on click position relative to split."""
+        if not config.get('read_metadata'):
+            return
+        split_x = int(self.image_x_offset + self.image_width * self.split_position)
+        if mouse_x < split_x:
+            self.meta_overlay_left.toggle()
+            if self.meta_overlay_left._visible:
+                self.meta_overlay_left._reposition()
+        else:
+            self.meta_overlay_right.toggle()
+            if self.meta_overlay_right._visible:
+                self.meta_overlay_right._reposition()
+
+    def _toggle_meta_left(self):
+        if not config.get('read_metadata'):
+            return
+        self.meta_overlay_left.toggle()
+        if self.meta_overlay_left._visible:
+            self.meta_overlay_left._reposition()
 
     def mouse_move_on_image(self, event):
-        if self.comparison_pixmap and (self.dragging_split or event.buttons() & Qt.MouseButton.LeftButton):
-            self.dragging_split = True
+        if self.comparison_pixmap and self.dragging_split:
             self.update_split_from_mouse(event.pos().x())
 
     def update_split_from_mouse(self, mouse_x):
@@ -1446,6 +1874,7 @@ class FullscreenViewer(QWidget):
                 self.main_pixmap = pixmap
                 self.image_container.update()
             self.update_info_label()
+            self._update_meta_overlay_left()
 
     def load_comparison_at_index(self, index):
         if not self.main_window:
@@ -1462,6 +1891,7 @@ class FullscreenViewer(QWidget):
                 self.comparison_pixmap = pixmap2
                 self.image_container.update()
             self.update_info_label()
+            self._update_meta_overlay_right()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -1494,8 +1924,8 @@ class MainWindow(QMainWindow):
 
         self.tabs = CustomTabBar()
         self.tabs.setTabsClosable(False)
-        self.ui_state_level1 = True  # True = visible (Espace/F11)
-        self.ui_state_level2 = True  # True = visible (Ctrl+Espace/Ctrl+F11)
+        self.ui_state_level1 = True
+        self.ui_state_level2 = True
 
         self.zoom_timer = QTimer()
         self.zoom_timer.setSingleShot(True)
@@ -1547,7 +1977,6 @@ class MainWindow(QMainWindow):
             tab._hide_hover()
 
     def _collect_session_paths(self):
-        """Return list of last_imported_json paths across all tabs (deduped, ordered)."""
         paths = []
         for i in range(self.tabs.count()):
             tab = self.tabs.widget(i)

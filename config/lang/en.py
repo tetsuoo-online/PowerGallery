@@ -122,4 +122,7 @@ LANG = {
     'style_tab_base': 'Base',
     'style_tab_module': 'Module',
     'style_module_no_style': 'This module has no custom styles',
+    # Metadata
+    'options_read_metadata': 'Read image metadata (PNG/WebP)',
+    'hint_read_metadata': 'Reads generation parameters from PNG and WebP files (prompt, model, CFG, seed…). Click on image in fullscreen to toggle overlay.',
 }

@@ -8,12 +8,14 @@
   "current_style": "dark",
   "current_module_style": "style",
   "dataset_clear_if_empty": true,
-  "show_title": false,
+  "show_title": true,
   "show_description": false,
   "fullscreen_opacity": 100,
+  "read_metadata": true,
   "last_session": [
-    "F:\\Documents\\_dev_scripts\\Checkpoints Compare\\PyQt6\\v9\\grids\\grid-A_20260329-091124.json",
-    "F:\\Documents\\_dev_scripts\\Checkpoints Compare\\PyQt6\\v9\\grids\\grid-B_20260329-091124.json"
+    "F:\\Documents\\_dev_scripts\\Checkpoints Compare\\PyQt6\\v9\\grids\\grid-A_20260330-002504.json",
+    "F:\\Documents\\_dev_scripts\\Checkpoints Compare\\PyQt6\\v9\\grids\\grid-B_20260330-002504.json",
+    "F:/Documents/_dev_scripts/Checkpoints Compare/PyQt6/v9/_grids/grid-A_20260325-054535_Anima_Dataset.json"
   ],
   "import_folders_recursive": true
 }
