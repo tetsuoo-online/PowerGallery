@@ -7,10 +7,11 @@ LANG = {
     'btn_select_folder': 'Checkpoints Folder',
     'btn_export': 'Export JSON',
     'btn_import': 'Import JSON',
-    'btn_save_tabs': '💾 Sauver Onglets',
-    'btn_clear': "Vider l'onglet",
-    'slider_label': 'Taille',
-    'drop_zone_text': '🖼️ Glissez des images ou JSON ici',
+    'btn_save_tabs': '💾 Save Tabs',
+    'btn_clear': 'Clear Tab',
+    'btn_refresh': 'Rafraîchir',
+    'slider_label': 'Size',
+    'drop_zone_text': '🖼️ Drop images or JSON here',
     'options_title': 'Options',
     'options_language': 'Langue',
     'options_theme': 'Thème',
@@ -21,17 +22,17 @@ LANG = {
     'options_import_replace': 'Remplacer',
     'options_close': 'Fermer',
     'options_close_cancel': 'Annuler',
-    # Noms des onglets Options
+    # Options tab names
     'options_tab_general': 'Général',
     'options_tab_style': 'Style',
     'options_tab_modules': 'Modules',
-    # Checkboxes onglet Général
+    # General tab checkboxes
     'options_import_in_tabs': 'Importer dans des onglets',
     'options_auto_load_last': 'Charger la dernière session',
     'options_auto_save_session': 'Sauvegarde auto de session',
-    # Onglet Modules
+    # Modules tab
     'options_module_none': 'Aucun module',
-    # Menu déroulant module
+    # Module dropdown
     'dropdown_select_action': '-- Sélectionner une action --',
     'dropdown_no_module': '< Aucun module >',
     # Messages / log
@@ -41,15 +42,15 @@ LANG = {
     'msg_imported': 'Importé',
     'msg_session_saved': 'Session sauvegardée ({n} onglet(s))',
     'msg_multiple_json': '⚠️ Plusieurs fichiers JSON détectés. Seul le premier sera importé.',
-    'msg_cant_delete_first_tab': "Impossible de supprimer le dernier onglet",
-    'msg_cant_delete_last_tab': "Impossible de fermer le seul onglet",
+    'msg_cant_delete_first_tab': 'Impossible de supprimer le dernier onglet',
+    'msg_cant_delete_last_tab': 'Impossible de fermer le seul onglet',
     'msg_updated_names': '{n} nom(s) de carte mis à jour',
     'msg_loaded_images': '{n} nouvelle(s) image(s) chargée(s)',
     'msg_skipped_duplicates': '{n} doublon(s) ignoré(s)',
     'msg_no_images_to_load': 'Aucune image à charger',
     'msg_refreshed_cards': '{n} cartes rechargées',
     'msg_import_error': "Erreur d'import : {e}",
-    # Dialogues fichiers
+    # File dialogs
     'dialog_select_folder': 'Sélectionner le dossier',
     'dialog_export_title': 'Exporter la grille',
     'dialog_import_title': 'Importer la grille',
@@ -58,10 +59,10 @@ LANG = {
     'file_filter_json': 'Fichiers JSON (*.json)',
     'file_filter_images': 'Images (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': 'Images et JSON (*.png *.jpg *.jpeg *.webp *.json);;Images (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;Tous les fichiers (*.*)',
-    # Visionneuse plein écran
+    # Fullscreen viewer
     'fullscreen_compare': 'Comparer avec :',
     'fullscreen_tab_current': '{name} (actif)',
-    # Éditeur de style
+    # Style editor
     'style_available_styles': 'Styles disponibles',
     'style_actions': 'Actions',
     'style_select_to_duplicate': 'Sélectionner un style à dupliquer :',
@@ -83,9 +84,9 @@ LANG = {
     'style_confirm_delete_msg': "Supprimer le style '{name}' ?",
     'style_load_error': 'Erreur de chargement du style : {e}',
     'style_delete_error': 'Erreur lors de la suppression : {e}',
-    # Carte Dataset
+    # Dataset card
     'dataset_no_txt': 'Aucun fichier .txt trouvé',
-    # Module Dataset
+    # Dataset module
     'dataset_add_title': 'Ajouter un tag',
     'dataset_replace_title': 'Remplacer un tag',
     'dataset_tag_to_insert': 'Tag à insérer',
@@ -104,16 +105,25 @@ LANG = {
     'hint_import_mode': 'Ajouter : conserve les cartes existantes. Remplacer : vide la grille avant import.',
     'hint_import_in_tabs': 'Si activé, les fichiers déposés sont chargés dans un nouvel onglet quand le courant a déjà des images.',
     'hint_auto_load_last': 'Recharge automatiquement la dernière session sauvegardée au démarrage.',
-    'hint_auto_save_session': 'Sauvegarde automatiquement la session à chaque fermeture d\'onglet ou import JSON.',
+    'hint_auto_save_session': "Sauvegarde automatiquement la session à chaque fermeture d'onglet ou import JSON.",
     # Hover hints
     'hover_close_tab': 'Fermer cet onglet',
     'hover_add_tab': 'Ajouter un onglet',
     'hover_remove_tabs': 'Supprimer tous les onglets',
     'hover_clear_tab': 'Vider toutes les cartes',
-    # Champs Titre / Description
+    # Title / Description fields
     'options_show_title': 'Champ Titre',
     'options_show_description': 'Champ Description',
     'card_title_placeholder': 'Titre...',
     'card_description_placeholder': 'Description...',
     'options_fullscreen_opacity': 'Opacité plein écran',
+    'options_import_recursive': 'Import de dossiers récursif',
+    'hint_import_recursive': "Si activé, le chargement d'un dossier inclut aussi les images de tous ses sous-dossiers.",
+    # Style Editor sub-tabs
+    'style_tab_base': 'Base',
+    'style_tab_module': 'Module',
+    'style_module_no_style': "Ce module n'a pas de styles personnalisés",
+    # Metadata
+    'options_read_metadata': 'Lire les métadonnées (PNG/WebP/JPG)',
+    'hint_read_metadata': "Lit les paramètres de génération depuis les fichiers PNG, WebP et JPG (prompt, modèle, CFG, seed…). Cliquez sur l'image en plein écran pour afficher/masquer.",
 }

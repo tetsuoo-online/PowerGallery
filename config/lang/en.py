@@ -9,6 +9,7 @@ LANG = {
     'btn_import': 'Import JSON',
     'btn_save_tabs': '💾 Save Tabs',
     'btn_clear': 'Clear Tab',
+	'btn_refresh': 'Refresh',
     'slider_label': 'Size',
     'drop_zone_text': '🖼️ Drop images or JSON here',
     'options_title': 'Options',
@@ -123,6 +124,6 @@ LANG = {
     'style_tab_module': 'Module',
     'style_module_no_style': 'This module has no custom styles',
     # Metadata
-    'options_read_metadata': 'Read image metadata (PNG/WebP)',
-    'hint_read_metadata': 'Reads generation parameters from PNG and WebP files (prompt, model, CFG, seed…). Click on image in fullscreen to toggle overlay.',
+    'options_read_metadata': 'Read image metadata (PNG/WebP/JPG)',
+    'hint_read_metadata': 'Reads generation parameters from PNG, WebP and JPG files (prompt, model, CFG, seed…). Click on image in fullscreen mode to toggle overlay.',
 }

@@ -11,9 +11,10 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLabel, QFileDialog, 
                              QScrollArea, QTabWidget, QSlider, QLineEdit, QTextEdit,
                              QGridLayout, QFrame, QDialog, QComboBox, QLayout, QSizePolicy,
-                             QCheckBox, QGroupBox, QListWidget, QListWidgetItem, QStackedWidget)
+                             QCheckBox, QGroupBox, QListWidget, QListWidgetItem, QStackedWidget,
+QDialogButtonBox, QFormLayout, QSpinBox, QMessageBox)
 from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize
-from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon
+from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon, QFontMetrics
 
 from config.settings import config
 from widgets import CardDetailsDialog
@@ -308,6 +309,106 @@ def format_metadata_for_display(card):
 
     return '\n'.join(lines)
 
+
+
+
+class Grid2ImgDialog(QDialog):
+    from config.options_style import apply_options_style
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Grid2Img")
+        self.resize(320, 420)
+        self.apply_options_style()
+
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.title_edit = QLineEdit()
+        self.title_edit.setPlaceholderText("Optional title")
+        form.addRow("Title:", self.title_edit)
+
+        self.bg_combo = QComboBox()
+        self.bg_combo.addItems(["White", "Black", "Gray", "Light Gray"])
+        form.addRow("Background:", self.bg_combo)
+
+        self.spacing_spin = QSpinBox()
+        self.spacing_spin.setRange(0, 100)
+        self.spacing_spin.setValue(10)
+        form.addRow("Spacing:", self.spacing_spin)
+
+        self.padding_spin = QSpinBox()
+        self.padding_spin.setRange(0, 200)
+        self.padding_spin.setValue(20)
+        form.addRow("Padding:", self.padding_spin)
+
+        self.title_size_spin = QSpinBox()
+        self.title_size_spin.setRange(10, 96)
+        self.title_size_spin.setValue(24)
+        form.addRow("Title size:", self.title_size_spin)
+
+        self.text_size_spin = QSpinBox()
+        self.text_size_spin.setRange(8, 48)
+        self.text_size_spin.setValue(14)
+        form.addRow("Text size:", self.text_size_spin)
+
+        layout.addLayout(form)
+        layout.addWidget(QLabel("Fields to print under each image:"))
+
+        self.field_prompt = QCheckBox("Prompt")
+        self.field_checkpoint = QCheckBox("Checkpoint")
+        self.field_cfg = QCheckBox("CFG")
+        self.field_sampler = QCheckBox("Sampler")
+        self.field_steps = QCheckBox("Steps")
+        self.field_seed = QCheckBox("Seed")
+        self.field_lora = QCheckBox("LoRA")
+        self.field_lora_strength = QCheckBox("LoRA strength")
+        self.field_checkpoint.setChecked(True)
+
+        for w in [
+            self.field_prompt, self.field_checkpoint, self.field_cfg, self.field_sampler,
+            self.field_steps, self.field_seed, self.field_lora, self.field_lora_strength,
+        ]:
+            layout.addWidget(w)
+
+        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        btns.accepted.connect(self.accept)
+        btns.rejected.connect(self.reject)
+        layout.addWidget(btns)
+
+    def get_options(self):
+        bg_map = {
+            "White": QColor("white"),
+            "Black": QColor("black"),
+            "Gray": QColor(128, 128, 128),
+            "Light Gray": QColor(235, 235, 235),
+        }
+        fields = []
+        if self.field_prompt.isChecked():
+            fields.append("prompt")
+        if self.field_checkpoint.isChecked():
+            fields.append("checkpoint")
+        if self.field_cfg.isChecked():
+            fields.append("cfg")
+        if self.field_sampler.isChecked():
+            fields.append("sampler")
+        if self.field_steps.isChecked():
+            fields.append("steps")
+        if self.field_seed.isChecked():
+            fields.append("seed")
+        if self.field_lora.isChecked():
+            fields.append("lora")
+        if self.field_lora_strength.isChecked():
+            fields.append("lora_strength")
+        return {
+            "title": self.title_edit.text().strip(),
+            "background": bg_map[self.bg_combo.currentText()],
+            "spacing": self.spacing_spin.value(),
+            "padding": self.padding_spin.value(),
+            "title_size": self.title_size_spin.value(),
+            "text_size": self.text_size_spin.value(),
+            "fields": fields,
+        }
 
 # ── Tab widget ────────────────────────────────────────────────────────────────
 
@@ -898,6 +999,9 @@ class GridTab(QWidget):
         self.save_tabs_btn = QPushButton(config.get_text('btn_save_tabs'))
         self.save_tabs_btn.clicked.connect(self.save_tabs_manually)
 
+        self.grid2img_btn = QPushButton("Grid2Img")
+        self.grid2img_btn.clicked.connect(self.open_grid2img_dialog)
+
         self.export_btn = QPushButton(config.get_text('btn_export'))
         self.export_btn.clicked.connect(self.export_grid)
 
@@ -905,13 +1009,19 @@ class GridTab(QWidget):
         self.clear_btn.setStyleSheet(get_styles().clear_button())
         self.clear_btn.clicked.connect(self.clear_grid)
 
+        self.refresh_btn = QPushButton(config.get_text('btn_refresh'))
+        self.refresh_btn.setStyleSheet(get_styles().refresh_button())
+        self.refresh_btn.clicked.connect(self.refresh_cards)
+
         controls1.addWidget(self.close_tab_btn)
         controls1.addWidget(self.options_btn)
         controls1.addWidget(self.module_dropdown)
         controls1.addWidget(self.import_btn)
         controls1.addWidget(self.save_tabs_btn)
+        controls1.addWidget(self.grid2img_btn)
         controls1.addWidget(self.export_btn)
         controls1.addWidget(self.clear_btn)
+        controls1.addWidget(self.refresh_btn)
         controls1.addStretch()
 
         controls2 = QHBoxLayout()
@@ -1092,6 +1202,7 @@ class GridTab(QWidget):
         self.drop_zone.setStyleSheet(styles.drop_zone())
         self.options_btn.setStyleSheet(styles.options_button())
         self.clear_btn.setStyleSheet(styles.clear_button())
+        self.refresh_btn.setStyleSheet(styles.refresh_button())
         for card in self.cards:
             card.apply_styles()
 
@@ -1446,6 +1557,180 @@ class GridTab(QWidget):
 
     # ── Card refresh ──────────────────────────────────────────────────────────
 
+    def open_grid2img_dialog(self):
+        cards = self.get_all_image_cards()
+        if not cards:
+            QMessageBox.information(self, "Grid2Img", "No images to export.")
+            return
+
+        dlg = Grid2ImgDialog(self)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        options = dlg.get_options()
+        self.export_grid_to_image(options)
+
+    def get_all_image_cards(self):
+        cards = []
+        for i in range(self.grid_layout.count()):
+            item = self.grid_layout.itemAt(i)
+            if not item:
+                continue
+            w = item.widget()
+            if isinstance(w, ImageCard):
+                cards.append(w)
+        return cards
+
+    def get_card_export_values(self, card):
+        values = {}
+        raw = card.raw_json_data or {}
+        module = card.module_data or {}
+        meta = getattr(card, 'all_metadata', {}) or {}
+
+        def first_non_empty(*vals):
+            for v in vals:
+                if v is None:
+                    continue
+                if isinstance(v, str) and not v.strip():
+                    continue
+                return v
+            return None
+
+        values["checkpoint"] = first_non_empty(
+            module.get("checkpointName"), raw.get("checkpointName"), getattr(card, "checkpoint_name", None), meta.get('model')
+        )
+        values["prompt"] = first_non_empty(
+            module.get("prompt"), raw.get("prompt"), raw.get("positivePrompt"), raw.get("description"), getattr(card, "description", None), meta.get('prompt')
+        )
+        values["cfg"] = first_non_empty(module.get("cfg"), raw.get("cfg"), raw.get("cfgScale"), meta.get('cfg'))
+        values["sampler"] = first_non_empty(module.get("sampler"), raw.get("sampler"), meta.get('sampler'))
+        values["steps"] = first_non_empty(module.get("steps"), raw.get("steps"), meta.get('steps'))
+        values["seed"] = first_non_empty(module.get("seed"), raw.get("seed"), meta.get('seed'))
+        values["lora"] = first_non_empty(module.get("lora"), raw.get("lora"), raw.get("loraName"), meta.get('lora_hashes'))
+        values["lora_strength"] = first_non_empty(module.get("loraStrength"), raw.get("loraStrength"), raw.get("lora_strength"))
+        return values
+
+    def build_card_export_lines(self, card, selected_fields):
+        values = self.get_card_export_values(card)
+        labels = {
+            "prompt": "Prompt",
+            "checkpoint": "Checkpoint",
+            "cfg": "CFG",
+            "sampler": "Sampler",
+            "steps": "Steps",
+            "seed": "Seed",
+            "lora": "LoRA",
+            "lora_strength": "LoRA strength",
+        }
+        lines = []
+        for key in selected_fields:
+            val = values.get(key)
+            if val is None:
+                continue
+            text = str(val).strip()
+            if not text:
+                continue
+            if key == "prompt" and len(text) > 180:
+                text = text[:177] + "..."
+            lines.append(f"{labels[key]}: {text}")
+        return lines
+
+    def export_grid_to_image(self, options):
+        cards = self.get_all_image_cards()
+        if not cards:
+            QMessageBox.information(self, "Grid2Img", "No images to export.")
+            return
+
+        path, _ = QFileDialog.getSaveFileName(self, "Save grid image", "grid_export.png", "PNG Images (*.png)")
+        if not path:
+            return
+
+        columns = max(1, self.grid_layout.columnCount())
+        spacing = options["spacing"]
+        padding = options["padding"]
+        title = options["title"]
+        title_size = options["title_size"]
+        text_size = options["text_size"]
+        bg = options["background"]
+        selected_fields = options["fields"]
+
+        cell_width = self.card_size
+        thumb_height = self.card_size
+
+        title_font = QFont()
+        title_font.setPointSize(title_size)
+        title_font.setBold(True)
+        text_font = QFont()
+        text_font.setPointSize(text_size)
+
+        fm_title = QFontMetrics(title_font)
+        fm_text = QFontMetrics(text_font)
+
+        card_lines = [self.build_card_export_lines(card, selected_fields) for card in cards]
+        line_heights = []
+        for lines in card_lines:
+            h = 0
+            for line in lines:
+                br = fm_text.boundingRect(0, 0, cell_width, 1000, int(Qt.TextFlag.TextWordWrap), line)
+                h += br.height() + 4
+            line_heights.append(h)
+
+        cell_heights = [thumb_height + (8 + h if h > 0 else 0) for h in line_heights]
+        max_cell_height = max(cell_heights) if cell_heights else thumb_height
+        title_height = fm_title.height() + spacing if title else 0
+        rows = (len(cards) + columns - 1) // columns
+
+        canvas_width = padding * 2 + columns * cell_width + (columns - 1) * spacing
+        canvas_height = padding * 2 + title_height + rows * max_cell_height + (rows - 1) * spacing
+
+        canvas = QPixmap(canvas_width, canvas_height)
+        canvas.fill(bg)
+
+        painter = QPainter(canvas)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+
+        y0 = padding
+        text_color = Qt.GlobalColor.black if bg.lightness() > 128 else Qt.GlobalColor.white
+        painter.setPen(text_color)
+
+        if title:
+            painter.setFont(title_font)
+            painter.drawText(QRect(padding, y0, canvas_width - 2 * padding, fm_title.height() + 10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, title)
+            y0 += title_height
+
+        for idx, card in enumerate(cards):
+            row = idx // columns
+            col = idx % columns
+            x = padding + col * (cell_width + spacing)
+            y = y0 + row * (max_cell_height + spacing)
+
+            pm = QPixmap(card.image_path)
+            if pm.isNull():
+                continue
+
+            cropped = card.smart_square_crop(pm)
+            thumb = cropped.scaled(cell_width, thumb_height, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            painter.drawPixmap(x, y, thumb)
+
+            lines = card_lines[idx]
+            if lines:
+                painter.setFont(text_font)
+                ty = y + thumb_height + 8
+                for line in lines:
+                    rect = QRect(x, ty, cell_width, 1000)
+                    br = painter.boundingRect(rect, int(Qt.TextFlag.TextWordWrap), line)
+                    painter.drawText(rect, int(Qt.TextFlag.TextWordWrap), line)
+                    ty += br.height() + 4
+
+        painter.end()
+
+        if not canvas.save(path):
+            QMessageBox.warning(self, "Grid2Img", "Failed to save image.")
+            return
+
+        QMessageBox.information(self, "Grid2Img", f"Saved:\n{path}")
+
     def refresh_cards(self):
         if not self.cards:
             return
@@ -1487,6 +1772,7 @@ class GridTab(QWidget):
         self.import_btn.setText(config.get_text('btn_import'))
         self.save_tabs_btn.setText(config.get_text('btn_save_tabs'))
         self.clear_btn.setText(config.get_text('btn_clear'))
+        self.refresh_btn.setText(config.get_text('btn_refresh'))
         self.size_label.setText(config.get_text('slider_label') + ":")
         self.drop_zone.setText(config.get_text('drop_zone_text'))
         self.update_module_dropdown()
@@ -1535,8 +1821,7 @@ class MetadataOverlay(QWidget):
     Drawn on top of the image_container using absolute positioning.
     side: 'left' | 'right'
     """
-    PANEL_WIDTH = 320
-    PANEL_OPACITY = 0.55  # background opacity (0..1)
+    PANEL_WIDTH = 440
 
     def __init__(self, parent, side='left'):
         super().__init__(parent)
@@ -1602,7 +1887,8 @@ class MetadataOverlay(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        color = QColor(0, 0, 0, int(255 * self.PANEL_OPACITY))
+        color = QColor(get_styles().COLORS['bg3'])
+        color.setAlpha(50)
         painter.setBrush(color)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(self.rect(), 10, 10)

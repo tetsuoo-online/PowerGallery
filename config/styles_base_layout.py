@@ -112,6 +112,18 @@ def clear_button():
         }}
     """
 
+def refresh_button():
+    return f"""
+        QPushButton {{
+            background: {COLORS['accent']};
+            color: {COLORS['text1']};
+            font-weight: bold;
+        }}
+        QPushButton:hover {{
+            background: {COLORS['bg4']};
+        }}
+    """
+
 def main_window():
     return f"""
         QMainWindow {{

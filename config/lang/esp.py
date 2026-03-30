@@ -7,7 +7,9 @@ LANG = {
     'btn_select_folder': 'Carpeta de Checkpoints',
     'btn_export': 'Exportar JSON',
     'btn_import': 'Importar JSON',
+    'btn_save_tabs': '💾 Guardar pestañas',
     'btn_clear': 'Vaciar pestaña',
+    'btn_refresh': 'Actualizar',
     'slider_label': 'Tamaño',
     'drop_zone_text': '🖼️ Arrastra imágenes o JSON aquí',
     'options_title': 'Opciones',
@@ -20,23 +22,25 @@ LANG = {
     'options_import_replace': 'Reemplazar',
     'options_close': 'Cerrar',
     'options_close_cancel': 'Cancelar',
-    # Nombres de pestañas Opciones
+    # Options tab names
     'options_tab_general': 'General',
     'options_tab_style': 'Estilo',
     'options_tab_modules': 'Módulos',
-    # Checkboxes pestaña General
+    # General tab checkboxes
     'options_import_in_tabs': 'Importar en pestañas',
     'options_auto_load_last': 'Cargar última sesión',
-    # Pestaña Módulos
+    'options_auto_save_session': 'Guardar sesión automáticamente',
+    # Modules tab
     'options_module_none': 'Sin módulo',
-    # Menú desplegable módulo
+    # Module dropdown
     'dropdown_select_action': '-- Seleccionar acción --',
     'dropdown_no_module': '< Sin módulo >',
-    # Mensajes / log
+    # Messages / log
     'msg_loaded': 'Cargado',
     'msg_no_images': 'No hay imágenes para exportar',
     'msg_exported': 'Exportado',
     'msg_imported': 'Importado',
+    'msg_session_saved': 'Sesión guardada ({n} pestaña(s))',
     'msg_multiple_json': '⚠️ Varios archivos JSON detectados. Solo se importará el primero.',
     'msg_cant_delete_first_tab': 'No se puede eliminar la última pestaña',
     'msg_cant_delete_last_tab': 'No se puede cerrar la única pestaña',
@@ -46,7 +50,7 @@ LANG = {
     'msg_no_images_to_load': 'No hay imágenes para cargar',
     'msg_refreshed_cards': '{n} cartas recargadas',
     'msg_import_error': 'Error de importación: {e}',
-    # Diálogos de archivo
+    # File dialogs
     'dialog_select_folder': 'Seleccionar carpeta',
     'dialog_export_title': 'Exportar cuadrícula',
     'dialog_import_title': 'Importar cuadrícula',
@@ -55,10 +59,10 @@ LANG = {
     'file_filter_json': 'Archivos JSON (*.json)',
     'file_filter_images': 'Imágenes (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': 'Imágenes y JSON (*.png *.jpg *.jpeg *.webp *.json);;Imágenes (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;Todos los archivos (*.*)',
-    # Visor de pantalla completa
+    # Fullscreen viewer
     'fullscreen_compare': 'Comparar con:',
     'fullscreen_tab_current': '{name} (actual)',
-    # Editor de estilo
+    # Style editor
     'style_available_styles': 'Estilos disponibles',
     'style_actions': 'Acciones',
     'style_select_to_duplicate': 'Seleccionar estilo a duplicar:',
@@ -80,9 +84,9 @@ LANG = {
     'style_confirm_delete_msg': "¿Eliminar el estilo '{name}'?",
     'style_load_error': 'Error al cargar el estilo: {e}',
     'style_delete_error': 'Error al eliminar: {e}',
-    # Carta Dataset
+    # Dataset card
     'dataset_no_txt': 'No se encontró archivo .txt',
-    # Módulo Dataset
+    # Dataset module
     'dataset_add_title': 'Añadir etiqueta',
     'dataset_replace_title': 'Reemplazar etiqueta',
     'dataset_tag_to_insert': 'Etiqueta a insertar',
@@ -97,21 +101,29 @@ LANG = {
     'dataset_action_add_tag': 'Añadir etiqueta (+)',
     'dataset_action_replace_tag': 'Reemplazar etiqueta (♻️)',
     'dataset_clear_if_empty': 'Eliminar TXT si vacío',
-# Hover hints
-    'btn_save_tabs': '💾 Guardar pestañas',
-    'options_auto_save_session': 'Guardar sesión automáticamente',
-    'msg_session_saved': 'Sesión guardada ({n} pestaña(s))',
+    # Hover hints — Options dialog
     'hint_import_mode': 'Añadir: conserva las cartas existentes. Reemplazar: vacía la cuadrícula antes de importar.',
     'hint_import_in_tabs': 'Si está activado, los archivos soltados se cargan en una nueva pestaña si la actual ya tiene imágenes.',
     'hint_auto_load_last': 'Recarga automáticamente la última sesión guardada al iniciar.',
     'hint_auto_save_session': 'Guarda automáticamente la sesión al cerrar una pestaña o importar un JSON.',
+    # Hover hints
     'hover_close_tab': 'Cerrar esta pestaña',
     'hover_add_tab': 'Añadir una pestaña',
     'hover_remove_tabs': 'Eliminar todas las pestañas',
     'hover_clear_tab': 'Vaciar todas las cartas',
+    # Title / Description fields
     'options_show_title': 'Campo título',
     'options_show_description': 'Campo descripción',
     'card_title_placeholder': 'Título...',
     'card_description_placeholder': 'Descripción...',
     'options_fullscreen_opacity': 'Opacidad pantalla completa',
+    'options_import_recursive': 'Importar carpetas de forma recursiva',
+    'hint_import_recursive': 'Si está activado, al cargar una carpeta también se incluyen las imágenes de todas sus subcarpetas.',
+    # Style Editor sub-tabs
+    'style_tab_base': 'Base',
+    'style_tab_module': 'Módulo',
+    'style_module_no_style': 'Este módulo no tiene estilos personalizados',
+    # Metadata
+    'options_read_metadata': 'Leer metadatos de imagen (PNG/WebP/JPG)',
+    'hint_read_metadata': 'Lee parámetros de generación de archivos PNG, WebP y JPG (prompt, modelo, CFG, seed…). Haz clic en la imagen en pantalla completa para mostrar/ocultar.',
 }

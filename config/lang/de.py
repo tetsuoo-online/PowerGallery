@@ -7,7 +7,9 @@ LANG = {
     'btn_select_folder': 'Checkpoints Ordner',
     'btn_export': 'JSON exportieren',
     'btn_import': 'JSON importieren',
+    'btn_save_tabs': '💾 Tabs speichern',
     'btn_clear': 'Tab leeren',
+    'btn_refresh': 'Aktualisieren',
     'slider_label': 'Größe',
     'drop_zone_text': '🖼️ Bilder oder JSON hier ablegen',
     'options_title': 'Optionen',
@@ -20,23 +22,25 @@ LANG = {
     'options_import_replace': 'Ersetzen',
     'options_close': 'Schließen',
     'options_close_cancel': 'Abbrechen',
-    # Reiter-Namen Optionen
+    # Options tab names
     'options_tab_general': 'Allgemein',
     'options_tab_style': 'Stil',
     'options_tab_modules': 'Module',
-    # Allgemein-Checkboxen
+    # General tab checkboxes
     'options_import_in_tabs': 'In Tabs importieren',
     'options_auto_load_last': 'Letzte Sitzung laden',
-    # Module-Reiter
+    'options_auto_save_session': 'Sitzung automatisch speichern',
+    # Modules tab
     'options_module_none': 'Kein Modul',
-    # Modul-Dropdown
+    # Module dropdown
     'dropdown_select_action': '-- Aktion auswählen --',
     'dropdown_no_module': '< Kein Modul >',
-    # Meldungen / Log
+    # Messages / log
     'msg_loaded': 'Geladen',
     'msg_no_images': 'Keine Bilder zum Exportieren',
     'msg_exported': 'Exportiert',
     'msg_imported': 'Importiert',
+    'msg_session_saved': 'Sitzung gespeichert ({n} Tab(s))',
     'msg_multiple_json': '⚠️ Mehrere JSON-Dateien erkannt. Nur die erste wird importiert.',
     'msg_cant_delete_first_tab': 'Letzten Tab kann nicht gelöscht werden',
     'msg_cant_delete_last_tab': 'Einzigen Tab kann nicht geschlossen werden',
@@ -46,7 +50,7 @@ LANG = {
     'msg_no_images_to_load': 'Keine Bilder zum Laden',
     'msg_refreshed_cards': '{n} Karten neu geladen',
     'msg_import_error': 'Importfehler: {e}',
-    # Datei-Dialoge
+    # File dialogs
     'dialog_select_folder': 'Ordner auswählen',
     'dialog_export_title': 'Raster exportieren',
     'dialog_import_title': 'Raster importieren',
@@ -55,10 +59,10 @@ LANG = {
     'file_filter_json': 'JSON-Dateien (*.json)',
     'file_filter_images': 'Bilder (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': 'Bilder und JSON (*.png *.jpg *.jpeg *.webp *.json);;Bilder (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;Alle Dateien (*.*)',
-    # Vollbild-Ansicht
+    # Fullscreen viewer
     'fullscreen_compare': 'Vergleichen mit:',
     'fullscreen_tab_current': '{name} (aktuell)',
-    # Stil-Editor
+    # Style editor
     'style_available_styles': 'Verfügbare Stile',
     'style_actions': 'Aktionen',
     'style_select_to_duplicate': 'Stil zum Duplizieren auswählen:',
@@ -80,9 +84,9 @@ LANG = {
     'style_confirm_delete_msg': "Stil '{name}' löschen?",
     'style_load_error': 'Stil konnte nicht geladen werden: {e}',
     'style_delete_error': 'Löschen fehlgeschlagen: {e}',
-    # Dataset-Karte
+    # Dataset card
     'dataset_no_txt': 'Keine .txt-Datei gefunden',
-    # Dataset-Modul
+    # Dataset module
     'dataset_add_title': 'Tag hinzufügen',
     'dataset_replace_title': 'Tag ersetzen',
     'dataset_tag_to_insert': 'Einzufügender Tag',
@@ -97,21 +101,29 @@ LANG = {
     'dataset_action_add_tag': 'Tag hinzufügen (+)',
     'dataset_action_replace_tag': 'Tag ersetzen (♻️)',
     'dataset_clear_if_empty': 'TXT löschen wenn leer',
-    # Hover hints
-    'btn_save_tabs': '💾 Tabs speichern',
-    'options_auto_save_session': 'Sitzung automatisch speichern',
-    'msg_session_saved': 'Sitzung gespeichert ({n} Tab(s))',
+    # Hover hints — Options dialog
     'hint_import_mode': 'Hinzufügen: behält bestehende Karten. Ersetzen: leert das Raster vor dem Import.',
     'hint_import_in_tabs': 'Wenn aktiviert, werden abgelegte Dateien in einem neuen Tab geladen, falls der aktuelle bereits Bilder enthält.',
     'hint_auto_load_last': 'Lädt beim Start automatisch die zuletzt gespeicherte Sitzung.',
     'hint_auto_save_session': 'Speichert die Sitzung automatisch beim Schließen eines Tabs oder beim Importieren einer JSON-Datei.',
+    # Hover hints
     'hover_close_tab': 'Diesen Tab schließen',
     'hover_add_tab': 'Tab hinzufügen',
     'hover_remove_tabs': 'Alle Tabs entfernen',
     'hover_clear_tab': 'Alle Karten leeren',
+    # Title / Description fields
     'options_show_title': 'Titelfeld',
     'options_show_description': 'Beschreibungsfeld',
     'card_title_placeholder': 'Titel...',
     'card_description_placeholder': 'Beschreibung...',
     'options_fullscreen_opacity': 'Vollbild-Deckkraft',
+    'options_import_recursive': 'Ordner rekursiv importieren',
+    'hint_import_recursive': 'Wenn aktiviert, werden beim Laden eines Ordners auch Bilder aus allen Unterordnern eingeschlossen.',
+    # Style Editor sub-tabs
+    'style_tab_base': 'Basis',
+    'style_tab_module': 'Modul',
+    'style_module_no_style': 'Dieses Modul hat keine benutzerdefinierten Stile',
+    # Metadata
+    'options_read_metadata': 'Bild-Metadaten lesen (PNG/WebP/JPG)',
+    'hint_read_metadata': 'Liest Generierungsparameter aus PNG-, WebP- und JPG-Dateien (Prompt, Modell, CFG, Seed…). Im Vollbild auf das Bild klicken zum Ein-/Ausblenden.',
 }
