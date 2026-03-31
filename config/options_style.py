@@ -45,9 +45,35 @@ def apply_options_style(self):
 			color: #222222;
 		}
 		QCheckBox {
+			background: transparent;
 			color: #222222;
 			spacing: 5px;
 		}
+		QComboBox, QSpinBox  {
+			background: #f5f5f5;
+			color: #222222;
+			spacing: 5px;
+		}
+		QComboBox QAbstractItemView {
+			background: transparent;
+			color: #2196f3;
+			selection-background-color: #ffae00;
+			selection-color: white;
+		}
+		QComboBox QAbstractItemView::selected {
+    background: #f5f5f5;
+    color: black;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background: #f5f5f5;
+    color: black;
+}
+
+QComboBox QAbstractItemView::item:selected:!active {
+    background: #f5f5f5;
+    color: black;
+}
 		QCheckBox::indicator {
 			width: 18px;
 			height: 18px;
@@ -60,6 +86,7 @@ def apply_options_style(self):
 			border: 1px solid #2196f3;
 		}
 		QLabel {
+			background: transparent;
 			color: #222222;
 		}
 		QPushButton {

@@ -783,12 +783,8 @@ class ImageCard(QFrame):
             self.title_edit = QLineEdit()
             self.title_edit.setPlaceholderText(config.get_text('card_title_placeholder'))
             self.title_edit.setText(self.raw_json_data.get('title', ''))
-            self.title_edit.setStyleSheet(
-                "QLineEdit { background: transparent; border: none; "
-                "border-bottom: 1px solid #666; color: #cccccc; "
-                "font-size: 11px; padding: 1px 3px; }"
-                "QLineEdit:focus { border-bottom: 1px solid #2196F3; }"
-            )
+            self.title_edit.setStyleSheet(self._title_edit_style())
+            self.title_edit.textChanged.connect(lambda: self.title_edit.setStyleSheet(self._title_edit_style()))
             top_outer.addWidget(self.title_edit)
 
         top_container.setLayout(top_outer)
@@ -820,21 +816,15 @@ class ImageCard(QFrame):
             self.description_edit.setFixedHeight(55)
             self.description_edit.setPlaceholderText(config.get_text('card_description_placeholder'))
             self.description_edit.setPlainText(self.raw_json_data.get('description', ''))
-            self.description_edit.setStyleSheet(
-                "QTextEdit { background: #1e1e1e; color: #cccccc; border: 1px solid #444; "
-                "border-radius: 4px; font-size: 11px; padding: 2px; }"
-            )
-            if bottom_widget is None:
-                bottom_widget = self.description_edit
-            else:
-                wrapper = QWidget()
-                wl = QVBoxLayout()
-                wl.setContentsMargins(0, 0, 0, 0)
-                wl.setSpacing(3)
-                wl.addWidget(bottom_widget)
-                wl.addWidget(self.description_edit)
-                wrapper.setLayout(wl)
-                bottom_widget = wrapper
+            self.description_edit.setStyleSheet(self._text_edit_style())
+        wrapper = QWidget()
+        wl = QVBoxLayout()
+        wl.setContentsMargins(0, 0, 0, 0)
+        wl.setSpacing(3)
+        wl.addWidget(bottom_widget)
+        wl.addWidget(self.description_edit)
+        wrapper.setLayout(wl)
+        bottom_widget = wrapper
 
         self._top_container = top_container
         self._image_container = image_container
@@ -863,10 +853,34 @@ class ImageCard(QFrame):
         if self._bottom_widget:
             self._bottom_widget.setStyleSheet(style)
 
+    def _title_edit_style(self):
+        c = get_styles().COLORS
+        filled = self.title_edit is not None and self.title_edit.text() != ""
+        border_color = c['text1'] if filled else c['border1']
+        return (
+            f"QLineEdit {{ background: transparent; border: none; "
+            f"border-bottom: 1px solid {border_color}; color: {c['text1']}; "
+            f"font-size: 11px; padding: 1px 3px; }}"
+            f"QLineEdit:focus {{ border-bottom: 1px solid {c['text1']}; }}"
+        )
+
+    def _text_edit_style(self):
+        _c = get_styles().COLORS
+        return (
+            f"QTextEdit {{ background: {_c.get('bg2')}; "
+            f"color: {_c.get('text1')}; "
+            f"border: 1px solid {_c.get('border1')}; "
+            f"border-radius: 4px; font-size: 11px; padding: 2px; }}"
+        )
+
     def apply_styles(self):
         self.close_btn.setStyleSheet(get_styles().close_button())
         self._apply_container_bg()
         self.setStyleSheet(get_styles().card_style())
+        if self.title_edit:
+            self.title_edit.setStyleSheet(self._title_edit_style())
+        if self.description_edit:
+            self.description_edit.setStyleSheet(self._text_edit_style())
         module = self.get_active_module()
         if module and hasattr(module, 'apply_card_styles'):
             module.apply_card_styles(self)

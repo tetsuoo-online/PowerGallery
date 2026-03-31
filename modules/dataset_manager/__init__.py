@@ -276,7 +276,14 @@ class DatasetManager:
 
     @staticmethod
     def apply_card_styles(card):
-        pass  # No special border/style for dataset
+        if hasattr(card, 'txt_edit') and card.txt_edit:
+            _colors = _get_config().get_styles().COLORS
+            card.txt_edit.setStyleSheet(
+                f"QTextEdit {{ background: {_colors.get('bg2', '#1e1e1e')}; "
+                f"color: {_colors.get('text1', '#cccccc')}; "
+                f"border: 1px solid {_colors.get('border1', '#444')}; "
+                f"border-radius: 4px; font-size: 11px; padding: 2px; }}"
+            )
 
     @staticmethod
     def update_card_name(card, name):

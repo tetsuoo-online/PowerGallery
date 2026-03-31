@@ -3,7 +3,7 @@
 
 COLORS = {
     'bg1': '#ffffff',
-    'bg2': '#888888',
+    'bg2': '#777777',
     'bg3': '#3a3a3a',
     'bg4': '#bababa',
     'border1': '#666666',
