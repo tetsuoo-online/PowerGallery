@@ -12,7 +12,6 @@ def _get_styles():
     return config.get_styles()
 
 def _get_colors():
-    """Return base COLORS merged with the active module style (built-in or custom)."""
     from config.settings import config
     return config.get_merged_colors()
 
@@ -97,14 +96,66 @@ class CheckpointManager:
     def get_settings_widget(config):
         return None
 
-    # ── Card UI ──────────────────────────────────────────────────────────────
+    # ── Filename extraction ───────────────────────────────────────────────────
+
+    @staticmethod
+    def _extract_checkpoint(filename, checkpoints_list):
+        """Sort by descending length to avoid substring matching shorter names first."""
+        for checkpoint in sorted(checkpoints_list, key=len, reverse=True):
+            if checkpoint in filename:
+                return checkpoint
+        return ''
+
+    # ── Module data creation ──────────────────────────────────────────────────
+
+    @staticmethod
+    def create_module_data(filename, module_state):
+        """Called when loading a new image file. Extracts checkpoint from filename."""
+        checkpoints_list = module_state.get('checkpoints_list', [])
+        checkpoint_name = CheckpointManager._extract_checkpoint(filename, checkpoints_list)
+        return {
+            'checkpoint_name': checkpoint_name,
+            'display_title': checkpoint_name,
+            'display_title_label': 'Checkpoint',
+            'criteria': {},
+            'score': 0,
+        }
+
+    @staticmethod
+    def json_to_module_data(json_data):
+        checkpoint_name = json_data.get('checkpointName', '')
+        return {
+            'checkpoint_name': checkpoint_name,
+            'display_title': checkpoint_name,
+            'display_title_label': 'Checkpoint',
+            'criteria': json_data.get('criteria', {}),
+            'score': json_data.get('totalScore', 0),
+        }
+
+    # ── Card name update (batch) ──────────────────────────────────────────────
+
+    @staticmethod
+    def update_existing_card_names(grid_tab):
+        """Update all cards in grid_tab using the current checkpoints_list in module_state."""
+        import os
+        checkpoints_list = grid_tab.module_state.get('checkpoints_list', [])
+        updated = 0
+        for card in grid_tab.cards:
+            filename = os.path.basename(card.image_path)
+            new_name = CheckpointManager._extract_checkpoint(filename, checkpoints_list)
+            if new_name and new_name != card.module_data.get('checkpoint_name', ''):
+                CheckpointManager.update_card_name(card, new_name)
+                updated += 1
+        return updated
+
+    # ── Card UI ───────────────────────────────────────────────────────────────
 
     @staticmethod
     def populate_card_top(card, top_layout):
         mod_style = _get_mod_style()
         colors = _get_colors()
 
-        card.checkpoint_label = QLabel(card.checkpoint_name)
+        card.checkpoint_label = QLabel(card.module_data.get('checkpoint_name', ''))
         card.checkpoint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card.checkpoint_label.setStyleSheet(mod_style.checkpoint_label(colors))
 
@@ -184,7 +235,9 @@ class CheckpointManager:
 
     @staticmethod
     def update_card_name(card, name):
-        card.checkpoint_name = name
+        card.module_data['checkpoint_name'] = name
+        card.module_data['display_title'] = name
+        card.module_data['display_title_label'] = 'Checkpoint'
         if hasattr(card, 'checkpoint_label'):
             card.checkpoint_label.setText(name)
 
@@ -193,39 +246,40 @@ class CheckpointManager:
     @staticmethod
     def card_to_json(card):
         return {
-            'checkpointName': card.checkpoint_name,
+            'checkpointName': card.module_data.get('checkpoint_name', ''),
             'criteria': card.module_data.get('criteria', {}),
             'totalScore': card.module_data.get('score', 0),
         }
 
-    @staticmethod
-    def json_to_module_data(json_data):
-        return {
-            'criteria': json_data.get('criteria', {}),
-            'score': json_data.get('totalScore', 0),
-        }
-
-    # ── Dropdown actions ─────────────────────────────────────────────────────
+    # ── Dropdown actions ──────────────────────────────────────────────────────
 
     @staticmethod
     def handle_dropdown_action(key, grid_tab):
+        from config.settings import config as _config
         if key == "Checkpoints Folder":
             result = CheckpointManager.load_from_folder(grid_tab)
             if result:
-                msg = f"Loaded {len(result['images'])} checkpoints"
+                checkpoints = result['images']
+                grid_tab.module_state['checkpoints_list'] = checkpoints
+                updated = CheckpointManager.update_existing_card_names(grid_tab)
+                msg = f"Loaded {len(checkpoints)} checkpoints"
                 if result.get('txt_created'):
                     msg += f", saved to {Path(result['txt_created']).name}"
-                return {'type': 'checkpoints', 'images': result['images'], 'log': msg}
+                if updated:
+                    msg += f", updated {updated} card(s)"
+                return {'log': msg}
             return {'log': "No checkpoints found"}
 
         elif key == "Checkpoints.txt":
             result = CheckpointManager.load_from_txt(grid_tab)
             if result:
-                return {
-                    'type': 'checkpoints',
-                    'images': result['images'],
-                    'log': f"Loaded {len(result['images'])} checkpoints",
-                }
+                checkpoints = result['images']
+                grid_tab.module_state['checkpoints_list'] = checkpoints
+                updated = CheckpointManager.update_existing_card_names(grid_tab)
+                msg = f"Loaded {len(checkpoints)} checkpoints"
+                if updated:
+                    msg += f", updated {updated} card(s)"
+                return {'log': msg}
         return None
 
     # ── Loaders ───────────────────────────────────────────────────────────────

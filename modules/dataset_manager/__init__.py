@@ -232,10 +232,6 @@ class DatasetManager:
     # ── Card UI ───────────────────────────────────────────────────────────────
 
     @staticmethod
-    def populate_card_top(card, top_layout):
-        pass  # Dataset has no top section
-
-    @staticmethod
     def build_card_bottom(card):
         txt_edit = QTextEdit()
         txt_edit.setFixedHeight(80)
@@ -284,10 +280,6 @@ class DatasetManager:
                 f"border: 1px solid {_colors.get('border1', '#444')}; "
                 f"border-radius: 4px; font-size: 11px; padding: 2px; }}"
             )
-
-    @staticmethod
-    def update_card_name(card, name):
-        pass  # Dataset doesn't use checkpoint names
 
     # ── Data ──────────────────────────────────────────────────────────────────
 

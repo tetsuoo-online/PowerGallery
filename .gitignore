@@ -9,9 +9,10 @@ venv/
 *.bak
 *- Copie*.py
 *.zip
-Desktop.ini
-README_*
-TODO.txt
-node.zip
+config/settings.json
 _PUBLISH.BAT
 _update-version.ps1
+Desktop.ini
+node.zip
+README_*
+TODO.txt

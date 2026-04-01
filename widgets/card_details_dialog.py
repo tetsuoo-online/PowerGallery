@@ -2,7 +2,6 @@
 Card Details Dialog - Shows image metadata in a transparent popup
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
@@ -60,23 +59,24 @@ class CardDetailsDialog(QWidget):
         except Exception:
             resolution = "Unknown"
         
-        # Determine name label based on active module
-        try:
-            from config.settings import config
-            module_key = config.get('selected_module')
-        except Exception:
-            module_key = None
-        
-        name_label = "Checkpoint" if module_key else "Title"
-        
+        # Display title is provided by the active module through a common API.
+        # No module-specific fallback logic here.
+        module_data = getattr(self.card, 'module_data', {}) or {}
+        display_title = str(module_data.get('display_title', '')).strip()
+        display_title_label = str(module_data.get('display_title_label', '')).strip() or 'Info'
+
         # Create labels with info
-        info_items = [
-            (name_label, self.card.checkpoint_name),
+        info_items = []
+
+        if display_title:
+            info_items.append((display_title_label, display_title))
+
+        info_items.extend([
             ("Filename", file_path.name),
             ("Resolution", resolution),
             ("Size", file_size),
             ("Modified", file_date),
-        ]
+        ])
         
         # Add source JSON if available
         if self.source_json:

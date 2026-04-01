@@ -10,8 +10,7 @@ v9/
 │   │   ├── __init__.py
 │   │   ├── BloodyMary_v3.py
 │   │   ├── light_v2.py
-│   │   ├── light_v3.py
-│   │   └── v4.py
+│   │   └── light_v3.py
 │   ├── lang/
 │   │   ├── flags/
 │   │   │   ├── arab.gif
@@ -46,11 +45,12 @@ v9/
 │   │   │   └── new1.py
 │   │   ├── __init__.py
 │   │   └── style.py
-│   ├── dataset_manager/
-│   │   ├── custom/
-│   │   │   └── __init__.py
-│   │   └── __init__.py
-│   └── dataset_manager.py
+│   └── dataset_manager/
+│       ├── custom/
+│       │   └── __init__.py
+│       └── __init__.py
+├── tools/
+│   └── exiftool.exe
 ├── widgets/
 │   ├── __init__.py
 │   └── card_details_dialog.py

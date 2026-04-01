@@ -689,11 +689,6 @@ class OptionsDialog(QDialog):
         if isinstance(self.parent(), MainWindow):
             self.parent().refresh_ui_texts(lang_changed)
             self.parent().apply_styles()
-            if cards_need_refresh and not lang_changed:
-                for i in range(self.parent().tabs.count()):
-                    tab = self.parent().tabs.widget(i)
-                    if hasattr(tab, 'refresh_cards'):
-                        tab.refresh_cards()
 
         self.accept()
 
@@ -720,11 +715,10 @@ class OptionsDialog(QDialog):
 class ImageCard(QFrame):
     positionChanged = pyqtSignal()
 
-    def __init__(self, image_path, checkpoint_name=None, parent=None,
+    def __init__(self, image_path, parent=None,
                  source_json=None, module_data=None, raw_json_data=None):
         super().__init__(parent)
         self.image_path = image_path
-        self.checkpoint_name = checkpoint_name or ""
         self.source_json = source_json
         self.module_data = module_data or {}
         self.raw_json_data = raw_json_data or {}
@@ -809,6 +803,8 @@ class ImageCard(QFrame):
         bottom_widget = None
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
+            if bottom_widget is not None:
+                bottom_widget.setParent(self)
 
         self.description_edit = None
         if config.get('show_description'):
@@ -816,15 +812,26 @@ class ImageCard(QFrame):
             self.description_edit.setFixedHeight(55)
             self.description_edit.setPlaceholderText(config.get_text('card_description_placeholder'))
             self.description_edit.setPlainText(self.raw_json_data.get('description', ''))
-            self.description_edit.setStyleSheet(self._text_edit_style())
-        wrapper = QWidget()
-        wl = QVBoxLayout()
-        wl.setContentsMargins(0, 0, 0, 0)
-        wl.setSpacing(3)
-        wl.addWidget(bottom_widget)
-        wl.addWidget(self.description_edit)
-        wrapper.setLayout(wl)
-        bottom_widget = wrapper
+            _c = get_styles().COLORS
+            self.description_edit.setStyleSheet(
+                f"QTextEdit {{ background: {_c.get('bg2')}; "
+                f"color: {_c.get('text1')}; "
+                f"border: 1px solid {_c.get('border1')}; "
+                f"border-radius: 4px; font-size: 11px; padding: 2px; }}"
+            )
+        if bottom_widget or self.description_edit:
+            wrapper = QWidget()
+            wl = QVBoxLayout()
+            wl.setContentsMargins(0, 0, 0, 0)
+            wl.setSpacing(3)
+            if bottom_widget:
+                wl.addWidget(bottom_widget)
+            if self.description_edit:
+                wl.addWidget(self.description_edit)
+            wrapper.setLayout(wl)
+            bottom_widget = wrapper
+        else:
+            bottom_widget = None
 
         self._top_container = top_container
         self._image_container = image_container
@@ -864,23 +871,12 @@ class ImageCard(QFrame):
             f"QLineEdit:focus {{ border-bottom: 1px solid {c['text1']}; }}"
         )
 
-    def _text_edit_style(self):
-        _c = get_styles().COLORS
-        return (
-            f"QTextEdit {{ background: {_c.get('bg2')}; "
-            f"color: {_c.get('text1')}; "
-            f"border: 1px solid {_c.get('border1')}; "
-            f"border-radius: 4px; font-size: 11px; padding: 2px; }}"
-        )
-
     def apply_styles(self):
         self.close_btn.setStyleSheet(get_styles().close_button())
         self._apply_container_bg()
         self.setStyleSheet(get_styles().card_style())
         if self.title_edit:
             self.title_edit.setStyleSheet(self._title_edit_style())
-        if self.description_edit:
-            self.description_edit.setStyleSheet(self._text_edit_style())
         module = self.get_active_module()
         if module and hasattr(module, 'apply_card_styles'):
             module.apply_card_styles(self)
@@ -975,7 +971,7 @@ class GridTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.cards = []
-        self.checkpoints_list = []
+        self.module_state = {}
         self.card_size = 210
         self.active_details_dialog = None
         self.last_imported_json = None
@@ -1137,12 +1133,8 @@ class GridTab(QWidget):
 
         key = self.module_dropdown.currentData() or text
         result = module.handle_dropdown_action(key, self)
-        if result:
-            if result.get('type') == 'checkpoints':
-                self.checkpoints_list = result.get('images', [])
-                self.update_existing_card_names()
-            if result.get('log'):
-                self.log(result['log'])
+        if result and result.get('log'):
+            self.log(result['log'])
 
         self.module_dropdown.setCurrentIndex(0)
 
@@ -1150,9 +1142,16 @@ class GridTab(QWidget):
 
     def open_options(self):
         old_module = config.get('selected_module')
+        old_show_title = config.get('show_title')
+        old_show_description = config.get('show_description')
         dialog = OptionsDialog(self.get_main_window())
         dialog.exec()
-        if old_module != config.get('selected_module'):
+        cards_need_refresh = (
+            old_module != config.get('selected_module') or
+            old_show_title != config.get('show_title') or
+            old_show_description != config.get('show_description')
+        )
+        if cards_need_refresh:
             self.refresh_cards()
         self.update_module_dropdown()
 
@@ -1307,27 +1306,6 @@ class GridTab(QWidget):
         if tab_widget and tab_widget.count() == 1:
             tab_widget.setTabText(0, "A")
 
-    # ── Checkpoint name matching ───────────────────────────────────────────────
-
-    def extract_checkpoint_from_filename(self, filename):
-        for checkpoint in self.checkpoints_list:
-            if checkpoint in filename:
-                return checkpoint
-        return ""
-
-    def update_existing_card_names(self):
-        module = self.get_active_module()
-        if not module or not hasattr(module, 'update_card_name'):
-            return
-        updated = 0
-        for card in self.cards:
-            new_name = self.extract_checkpoint_from_filename(os.path.basename(card.image_path))
-            if new_name and new_name != card.checkpoint_name:
-                module.update_card_name(card, new_name)
-                updated += 1
-        if updated:
-            self.log(config.get_text('msg_updated_names').format(n=updated))
-
     # ── Card management ───────────────────────────────────────────────────────
 
     def load_images_from_paths(self, files):
@@ -1339,11 +1317,14 @@ class GridTab(QWidget):
                 duplicates += 1
                 continue
             filename = os.path.basename(file_path)
-            checkpoint = self.extract_checkpoint_from_filename(filename)
             module = self.get_active_module()
-            module_data = (module.json_to_module_data({}) if module and hasattr(module, 'json_to_module_data')
-                           else {})
-            card = ImageCard(file_path, checkpoint, self, module_data=module_data)
+            if module and hasattr(module, 'create_module_data'):
+                module_data = module.create_module_data(filename, self.module_state)
+            elif module and hasattr(module, 'json_to_module_data'):
+                module_data = module.json_to_module_data({})
+            else:
+                module_data = {}
+            card = ImageCard(file_path, self, module_data=module_data)
             card.positionChanged.connect(self.update_borders)
             self.cards.append(card)
             new_images += 1
@@ -1523,8 +1504,7 @@ class GridTab(QWidget):
                 if module and hasattr(module, 'json_to_module_data'):
                     module_data = module.json_to_module_data(img_data)
 
-                checkpoint = img_data.get("checkpointName", "")
-                card = ImageCard(img_data["absolutePath"], checkpoint, self,
+                card = ImageCard(img_data["absolutePath"], self,
                                  source_json=source_json_name,
                                  module_data=module_data,
                                  raw_json_data=img_data)
@@ -1611,7 +1591,7 @@ class GridTab(QWidget):
             return None
 
         values["checkpoint"] = first_non_empty(
-            module.get("checkpointName"), raw.get("checkpointName"), getattr(card, "checkpoint_name", None), meta.get('model')
+            card.module_data.get('checkpoint_name'), raw.get("checkpointName"), meta.get('model')
         )
         values["prompt"] = first_non_empty(
             module.get("prompt"), raw.get("prompt"), raw.get("positivePrompt"), raw.get("description"), getattr(card, "description", None), meta.get('prompt')
@@ -1750,7 +1730,6 @@ class GridTab(QWidget):
             return
         cards_data = [{
             'image_path': card.image_path,
-            'checkpoint_name': card.checkpoint_name,
             'source_json': card.source_json,
             'raw_json_data': card.raw_json_data,
             'module_data': card.module_data,
@@ -1768,7 +1747,7 @@ class GridTab(QWidget):
             else:
                 module_data = data.get('module_data', {})
 
-            card = ImageCard(data['image_path'], data['checkpoint_name'], self,
+            card = ImageCard(data['image_path'], self,
                              source_json=data.get('source_json'),
                              module_data=module_data,
                              raw_json_data=raw_json)
@@ -2144,13 +2123,15 @@ class FullscreenViewer(QWidget):
 
     def update_info_label(self):
         module = self.grid_tab.get_active_module()
+        ckpt = self.card.module_data.get('checkpoint_name', '') if module else ''
         self.info_label.setText(
-            f"{self.card.checkpoint_name} - {os.path.basename(self.card.image_path)}"
-            if module else os.path.basename(self.card.image_path))
+            f"{ckpt} - {os.path.basename(self.card.image_path)}"
+            if ckpt else os.path.basename(self.card.image_path))
         if self.comparison_card:
+            ckpt2 = self.comparison_card.module_data.get('checkpoint_name', '') if module else ''
             self.info_label2.setText(
-                f"{self.comparison_card.checkpoint_name} - {os.path.basename(self.comparison_card.image_path)}"
-                if module else os.path.basename(self.comparison_card.image_path))
+                f"{ckpt2} - {os.path.basename(self.comparison_card.image_path)}"
+                if ckpt2 else os.path.basename(self.comparison_card.image_path))
 
     def show_previous_image(self):
         if self.current_card_index > 0:
