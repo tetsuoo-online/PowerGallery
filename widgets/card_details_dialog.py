@@ -84,7 +84,12 @@ class CardDetailsDialog(QWidget):
         
         # Add all info labels
         for label_text, value_text in info_items:
-            label = QLabel(f"<b>{label_text}:</b> {value_text}")
+            value_text = str(value_text)
+
+            if label_text == "Filename" and len(value_text) > 64:
+                value_text = value_text[:64] + "\n" + value_text[64:]
+
+            label = QLabel(f"{label_text}: {value_text}")
             label.setStyleSheet("""
                 QLabel {
                     color: white;
