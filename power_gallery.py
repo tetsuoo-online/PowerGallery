@@ -286,26 +286,21 @@ def format_metadata_for_display(card):
             lines.append(f"{label}: {meta[key]}")
 
     if 'prompt' in meta:
-        p = meta['prompt']
-        if len(p) > 250:
-            p = p[:250] + '…'
-        lines.append(f"\nPrompt:\n{p}")
+        lines.append(f"\nPrompt:\n{meta['prompt']}")
 
     if 'negative_prompt' in meta:
-        n = meta['negative_prompt']
-        if len(n) > 180:
-            n = n[:180] + '…'
-        lines.append(f"\nNeg:\n{n}")
+        lines.append(f"\nNeg:\n{meta['negative_prompt']}")
 
     # Extra exiftool pass-through fields (prefixed with _)
-    extras = [(k[1:], v) for k, v in meta.items()
-              if k.startswith('_') and k not in ('_raw_parameters', '_warning')]
-    if extras:
-        lines.append('\n— Extra —')
-        for k, v in extras[:12]:  # cap at 12 extra fields
-            if len(v) > 80:
-                v = v[:80] + '…'
-            lines.append(f"{k}: {v}")
+    if config.get('show_metadata_extra'):
+        extras = [(k[1:], v) for k, v in meta.items()
+                  if k.startswith('_') and k not in ('_raw_parameters', '_warning')]
+        if extras:
+            lines.append('\n— Extra —')
+            for k, v in extras[:12]:
+                if len(v) > 80:
+                    v = v[:80] + '…'
+                lines.append(f"{k}: {v}")
 
     return '\n'.join(lines)
 
@@ -524,6 +519,18 @@ class OptionsDialog(QDialog):
         self.read_metadata = QCheckBox(config.get_text('options_read_metadata'))
         self.read_metadata.setChecked(config.get('read_metadata') or False)
 
+        # Sub-option: Extra fields (indented, enabled only when read_metadata is on)
+        self.metadata_extra = QCheckBox(config.get_text('options_metadata_extra'))
+        self.metadata_extra.setChecked(config.get('show_metadata_extra') or False)
+        self.metadata_extra.setEnabled(config.get('read_metadata') or False)
+        self.read_metadata.toggled.connect(self.metadata_extra.setEnabled)
+        extra_row = QHBoxLayout()
+        extra_row.addSpacing(22)
+        extra_row.addWidget(self.metadata_extra)
+        extra_row.addStretch()
+        extra_widget = QWidget()
+        extra_widget.setLayout(extra_row)
+
         # Fullscreen opacity
         opacity_row = QHBoxLayout()
         opacity_label = QLabel(config.get_text('options_fullscreen_opacity') + ":")
@@ -550,6 +557,7 @@ class OptionsDialog(QDialog):
         self._install_option_hover(self.auto_load_last, 'hint_auto_load_last')
         self._install_option_hover(self.auto_save_session, 'hint_auto_save_session')
         self._install_option_hover(self.read_metadata, 'hint_read_metadata')
+        self._install_option_hover(self.metadata_extra, 'hint_metadata_extra')
 
         layout.addWidget(lang_group)
         layout.addWidget(import_group)
@@ -559,6 +567,7 @@ class OptionsDialog(QDialog):
         layout.addWidget(self.show_title)
         layout.addWidget(self.show_description)
         layout.addWidget(self.read_metadata)
+        layout.addWidget(extra_widget)
         layout.addWidget(opacity_widget)
         layout.addStretch()
         tab.setLayout(layout)
@@ -668,6 +677,7 @@ class OptionsDialog(QDialog):
         config.set('show_title', self.show_title.isChecked())
         config.set('show_description', self.show_description.isChecked())
         config.set('read_metadata', self.read_metadata.isChecked())
+        config.set('show_metadata_extra', self.metadata_extra.isChecked())
         config.set('fullscreen_opacity', self.opacity_slider.value())
 
         selected_module = next(
@@ -1813,12 +1823,16 @@ class MetadataOverlay(QWidget):
     Semi-transparent overlay panel showing image metadata.
     Drawn on top of the image_container using absolute positioning.
     side: 'left' | 'right'
+    Ctrl+scroll to change text size.
     """
     PANEL_WIDTH = 440
+    MIN_FONT = 8
+    MAX_FONT = 28
 
     def __init__(self, parent, side='left'):
         super().__init__(parent)
         self.side = side
+        self._font_size = 11
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._text = ""
@@ -1832,9 +1846,7 @@ class MetadataOverlay(QWidget):
         self.text_label = QLabel()
         self.text_label.setWordWrap(True)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.text_label.setStyleSheet(
-            "color: white; font-size: 11px; background: transparent;"
-        )
+        self._apply_font()
         self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         scroll = QScrollArea()
@@ -1842,9 +1854,25 @@ class MetadataOverlay(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         scroll.viewport().setStyleSheet("background: transparent;")
+        scroll.viewport().installEventFilter(self)
 
         layout.addWidget(scroll)
         self.setLayout(layout)
+
+    def _apply_font(self):
+        self.text_label.setStyleSheet(
+            f"color: white; font-size: {self._font_size}px; background: transparent;"
+        )
+
+    def eventFilter(self, obj, event):
+        if event.type() == event.Type.Wheel:
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                delta = event.angleDelta().y()
+                self._font_size += (1 if delta > 0 else -1)
+                self._font_size = max(self.MIN_FONT, min(self.MAX_FONT, self._font_size))
+                self._apply_font()
+                return True
+        return super().eventFilter(obj, event)
 
     def set_text(self, text):
         self._text = text

@@ -29,6 +29,7 @@ _DEFAULTS = {
     'show_description': False,
     'fullscreen_opacity': 100,
     'read_metadata': False,
+    'show_metadata_extra': False,
 }
 
 
