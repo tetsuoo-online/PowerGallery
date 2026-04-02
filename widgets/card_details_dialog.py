@@ -89,7 +89,8 @@ class CardDetailsDialog(QWidget):
             if label_text == "Filename" and len(value_text) > 64:
                 value_text = value_text[:64] + "\n" + value_text[64:]
 
-            label = QLabel(f"{label_text}: {value_text}")
+            label = QLabel(f"<b>{label_text}:</b> {value_text}")
+            label.setTextFormat(Qt.TextFormat.RichText)
             label.setStyleSheet("""
                 QLabel {
                     color: white;
