@@ -1,5 +1,5 @@
 [project]
-name = "Power Gallery"
+name = "PowerGallery"
 description = "A powerful customizable image gallery"
 version = "1.2.2"
 license = {file = "LICENSE"}

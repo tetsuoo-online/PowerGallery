@@ -2625,6 +2625,11 @@ class MainWindow(QMainWindow):
     def add_tab(self):
         if self.tabs.count() >= 26:
             return
+        # Reset hover sur l'onglet actuel avant de switcher
+        current = self.tabs.currentWidget()
+        if isinstance(current, GridTab):
+            current._hide_hover()
+        
         letter = chr(65 + self.tabs.count())
         grid_tab = GridTab()
         grid_tab.scroll_area.viewport().installEventFilter(self)
