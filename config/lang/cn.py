@@ -2,7 +2,6 @@ lang_name = "中文"
 lang_icon = "flags/cn.gif"
 
 LANG = {
-    'window_title': 'Power Gallery V9',
     'btn_options': '⚙️ 选项',
     'btn_select_folder': '检查点文件夹',
     'btn_export': '导出 JSON',

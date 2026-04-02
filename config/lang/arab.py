@@ -2,7 +2,6 @@ lang_name = "العربية"
 lang_icon = "flags/arab.gif"
 
 LANG = {
-    'window_title': 'Power Gallery V9',
     'btn_options': '⚙️ خيارات',
     'btn_select_folder': 'مجلد نقاط التفتيش',
     'btn_export': 'تصدير JSON',

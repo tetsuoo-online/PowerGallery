@@ -75,6 +75,18 @@ class Config:
         self._current_lang = self._languages.get(lang_key, {}).get('module', None)
         self._styles = None
 
+    # ── Version ─────────────────────────────────────────────────────────
+
+    def get_version(self):
+        try:
+            import re
+            path = Path(__file__).parent.parent / 'pyproject.toml'
+            text = path.read_text(encoding='utf-8')
+            m = re.search(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
+            return m.group(1) if m else ''
+        except Exception:
+            return ''
+
     # ── Persistence ───────────────────────────────────────────────────────────
 
     def _load(self):

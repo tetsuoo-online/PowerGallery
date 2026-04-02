@@ -21,7 +21,6 @@ from widgets import CardDetailsDialog
 from modules.checkpoint_manager import CheckpointManager
 from modules.dataset_manager import DatasetManager
 
-
 def get_styles():
     return config.get_styles()
 
@@ -2495,7 +2494,8 @@ class SplashScreen(QWidget):
         font.setWeight(QFont.Weight.Normal)
         painter.setFont(font)
         painter.setPen(QColor('#555555'))
-        painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, 'V 9')
+        # painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, 'V 9')
+        painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, f'V {config.get_version()}')
 
         n_dots = 5
         dot_r = 5
@@ -2530,7 +2530,7 @@ class SplashScreen(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(config.get_text('window_title'))
+        self.setWindowTitle(f"Power Gallery {config.get_version()}")
         self.setGeometry(100, 100, 1400, 900)
         self.setStyleSheet(get_styles().main_window())
 

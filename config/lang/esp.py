@@ -2,7 +2,6 @@ lang_name = "Español"
 lang_icon = "flags/esp.gif"
 
 LANG = {
-    'window_title': 'Power Gallery V9',
     'btn_options': '⚙️ Opciones',
     'btn_select_folder': 'Carpeta de Checkpoints',
     'btn_export': 'Exportar JSON',

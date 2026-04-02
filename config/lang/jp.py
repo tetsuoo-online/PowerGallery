@@ -2,7 +2,6 @@ lang_name = "日本語"
 lang_icon = "flags/jp.gif"
 
 LANG = {
-    'window_title': 'Power Gallery V9',
     'btn_options': '⚙️ オプション',
     'btn_select_folder': 'チェックポイントフォルダ',
     'btn_export': 'JSONエクスポート',
