@@ -32,8 +32,9 @@ LANG = {
     # Modules tab
     'options_module_none': 'Sin módulo',
     # Module dropdown
-    'dropdown_select_action': '-- Seleccionar acción --',
+    'dropdown_select_action': '-- Select action --',
     'dropdown_no_module': '< Sin módulo >',
+    'dropdown_no_action': '< Sin acción >',
     # Messages / log
     'msg_loaded': 'Cargado',
     'msg_no_images': 'No hay imágenes para exportar',
@@ -59,8 +60,9 @@ LANG = {
     'file_filter_images': 'Imágenes (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': 'Imágenes y JSON (*.png *.jpg *.jpeg *.webp *.json);;Imágenes (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;Todos los archivos (*.*)',
     # Fullscreen viewer
-    'fullscreen_compare': 'Comparar con:',
-    'fullscreen_tab_current': '{name} (actual)',
+    'fullscreen_compare': 'Compare with:',
+    'fullscreen_tab_current': '{name} (current)',
+    'meta_display_hint': '— Ctrl+desplazamiento para cambiar el tamaño del texto —',
     # Style editor
     'style_available_styles': 'Estilos disponibles',
     'style_actions': 'Acciones',
@@ -123,6 +125,8 @@ LANG = {
     'style_tab_module': 'Módulo',
     'style_module_no_style': 'Este módulo no tiene estilos personalizados',
     # Metadata
-    'options_read_metadata': 'Leer metadatos de imagen (PNG/WebP/JPG)',
-    'hint_read_metadata': 'Lee parámetros de generación de archivos PNG, WebP y JPG (prompt, modelo, CFG, seed…). Haz clic en la imagen en pantalla completa para mostrar/ocultar.',
+    'options_read_metadata': 'Read image metadata (PNG/WebP/JPG)',
+    'hint_read_metadata': 'Reads generation parameters from PNG, WebP and JPG files (prompt, model, CFG, seed…). Click on image in fullscreen mode to toggle overlay.',
+    'options_metadata_extra': 'Extra fields',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

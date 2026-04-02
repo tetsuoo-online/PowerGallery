@@ -32,8 +32,9 @@ LANG = {
     # Modules tab
     'options_module_none': 'لا توجد وحدة',
     # Module dropdown
-    'dropdown_select_action': '-- اختر إجراءً --',
-    'dropdown_no_module': '< لا توجد وحدة >',
+    'dropdown_select_action': '-- Select action --',
+    'dropdown_no_module': '< ا توجد وحدة >',
+    'dropdown_no_action': '< لا إجراء >',
     # Messages / log
     'msg_loaded': 'تم التحميل',
     'msg_no_images': 'لا توجد صور للتصدير',
@@ -59,8 +60,9 @@ LANG = {
     'file_filter_images': 'صور (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': 'صور و JSON (*.png *.jpg *.jpeg *.webp *.json);;صور (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;كل الملفات (*.*)',
     # Fullscreen viewer
-    'fullscreen_compare': 'مقارنة مع:',
-    'fullscreen_tab_current': '{name} (الحالي)',
+    'fullscreen_compare': 'Compare with:',
+    'fullscreen_tab_current': '{name} (current)',
+    'meta_display_hint': '— Ctrl+تمرير لتغيير حجم النص —',
     # Style editor
     'style_available_styles': 'الأنماط المتاحة',
     'style_actions': 'إجراءات',
@@ -125,4 +127,6 @@ LANG = {
     # Metadata
     'options_read_metadata': 'قراءة بيانات الصورة الوصفية (PNG/WebP/JPG)',
     'hint_read_metadata': 'يقرأ معاملات التوليد من ملفات PNG وWebP وJPG (المطالبة، النموذج، CFG، البذرة…). انقر على الصورة في وضع ملء الشاشة لتبديل طبقة العرض.',
+    'options_metadata_extra': 'Extra fields',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

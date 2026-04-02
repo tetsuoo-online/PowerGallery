@@ -11,7 +11,7 @@ import importlib
 import importlib.util
 from pathlib import Path
 
-_SETTINGS_FILE = Path(__file__).parent / 'settings.json'
+_SETTINGS_FILE = Path(__file__).parent / 'ui_settings.json'
 _LANG_DIR = Path(__file__).parent / 'lang'
 _MODULES_DIR = Path(__file__).parent.parent / 'modules'
 

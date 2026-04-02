@@ -15,13 +15,15 @@ Power Gallery lets you load batches of images into a grid, compare them side by 
 **Key features:**
 
 - **Multi-tab grid view** — organize images across up to 26 labeled tabs (A–Z)
-- **Drag & drop** — load images or JSON session files directly into the app
+- **Drag & drop** — load images (or a whole folder) or JSON session files directly into the app
 - **Fullscreen comparison** — view any image full screen; drag a split handle to compare two images from different tabs side by side
+- **View Metadata** — Read PNG/WebP/JPG metadata (prompt, model, seed, CFG...)
 - **Modules** — switch between evaluation modes:
   - *Checkpoint Manager* — rate images against named criteria (beauty, errors, LoRAs, prompts…), score each criterion manually as positive, neutral, or negative
-  - *Dataset Manager* — view and edit the `.txt` caption file associated with each image; batch add or replace tags. Is not TXT is present, it will be created automatically as you fill up the text field, or deleted if you remove the text.
+  - *Dataset Manager* — view and edit the `.txt` caption file associated with each image; batch add or replace tags. If no TXT is present it will be created automatically as you fill up the text field, or deleted if you remove the text.
 - **Resizable grid** — use the slider or Ctrl+scroll to zoom cards in/out
 - **Session save/load** — export your grid to JSON and reload it later, including all ratings
+- **Grid2Img** — export the grid as an image (PNG/WebP) with layout options and customizable fields
 - **Style editor** — customize the app's color theme with a visual editor, duplicate or delete custom themes
 - **Multi-language** — UI available in English, French, German, Spanish but also Arabic, Chinese, Japanese and Brazilian Portuguese. Because why not ! haha
 
@@ -44,11 +46,12 @@ START.BAT
 ## Usage
 
 1. Launch the app
-2. Drag images (`.png`, `.jpg`, `.jpeg`, `.webp`) or a saved `.json` session onto the drop zone
+2. Drag & drop images (`.png`, `.jpg`, `.jpeg`, `.webp`) or a saved `.json` session onto the drop zone
 3. Drag & drop between cards to change their order (a “push”, not a swap).
-4. Click any image to open the fullscreen viewer; right-click for details
-5. Use **Options** to choose a module, language, and import behavior
-6. Use **Export** to save your grid as a JSON file for later
+4. Optional Title & Description for each image (see Options)
+5. Click any image to open the fullscreen viewer; right-click for details
+6. Use **Options** to choose a module, language, and import behavior
+7. Use **Export** to save your grid as a JSON file for later use
 
 ---
 

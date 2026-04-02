@@ -32,8 +32,9 @@ LANG = {
     # Modules tab
     'options_module_none': 'Kein Modul',
     # Module dropdown
-    'dropdown_select_action': '-- Aktion auswählen --',
+    'dropdown_select_action': '-- Select action --',
     'dropdown_no_module': '< Kein Modul >',
+    'dropdown_no_action': '< Keine Aktion >',
     # Messages / log
     'msg_loaded': 'Geladen',
     'msg_no_images': 'Keine Bilder zum Exportieren',
@@ -59,8 +60,9 @@ LANG = {
     'file_filter_images': 'Bilder (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': 'Bilder und JSON (*.png *.jpg *.jpeg *.webp *.json);;Bilder (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;Alle Dateien (*.*)',
     # Fullscreen viewer
-    'fullscreen_compare': 'Vergleichen mit:',
-    'fullscreen_tab_current': '{name} (aktuell)',
+    'fullscreen_compare': 'Compare with:',
+    'fullscreen_tab_current': '{name} (current)',
+    'meta_display_hint': '— Ctrl+Scrollen zum Ändern der Textgröße —',
     # Style editor
     'style_available_styles': 'Verfügbare Stile',
     'style_actions': 'Aktionen',
@@ -125,4 +127,6 @@ LANG = {
     # Metadata
     'options_read_metadata': 'Bild-Metadaten lesen (PNG/WebP/JPG)',
     'hint_read_metadata': 'Liest Generierungsparameter aus PNG-, WebP- und JPG-Dateien (Prompt, Modell, CFG, Seed…). Im Vollbild auf das Bild klicken zum Ein-/Ausblenden.',
+    'options_metadata_extra': 'Extra fields',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

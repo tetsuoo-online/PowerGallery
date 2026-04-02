@@ -9,7 +9,8 @@ venv/
 *.bak
 *- Copie*.py
 *.zip
-config/settings.json
+config/grid2img_settings.json
+config/ui_settings.json
 _PUBLISH.BAT
 _update-version.ps1
 Desktop.ini

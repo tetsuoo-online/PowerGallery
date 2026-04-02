@@ -34,6 +34,7 @@ LANG = {
     # Module dropdown
     'dropdown_select_action': '-- Selecionar ação --',
     'dropdown_no_module': '< Nenhum módulo >',
+    'dropdown_no_action': '< Sem ação >',
     # Messages / log
     'msg_loaded': 'Carregado',
     'msg_no_images': 'Nenhuma imagem para exportar',
@@ -61,6 +62,7 @@ LANG = {
     # Fullscreen viewer
     'fullscreen_compare': 'Comparar com:',
     'fullscreen_tab_current': '{name} (atual)',
+    'meta_display_hint': '— Ctrl+scroll para redimensionar o texto —',
     # Style editor
     'style_available_styles': 'Estilos Disponíveis',
     'style_actions': 'Ações',
@@ -124,5 +126,7 @@ LANG = {
     'style_module_no_style': 'Este módulo não possui estilos personalizados',
     # Metadata
     'options_read_metadata': 'Ler metadados de imagem (PNG/WebP/JPG)',
-    'hint_read_metadata': 'Lê parâmetros de geração de arquivos PNG, WebP e JPG (prompt, modelo, CFG, seed…). Clique na imagem em tela cheia para alternar a sobreposição.',
+    'hint_read_metadata': 'Lê parâmetros de geração de arquivos PNG, WebP e JPG (prompt, modelo, CFG, seed…). Clique na imagem em tela cheia para alternar overlay.',
+    'options_metadata_extra': 'Extra fields',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

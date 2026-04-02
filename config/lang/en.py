@@ -62,6 +62,7 @@ LANG = {
     # Fullscreen viewer
     'fullscreen_compare': 'Compare with:',
     'fullscreen_tab_current': '{name} (current)',
+    'meta_display_hint': '— Ctrl+scroll to resize text —',
     # Style editor
     'style_available_styles': 'Available Styles',
     'style_actions': 'Actions',

@@ -34,6 +34,7 @@ LANG = {
     # Module dropdown
     'dropdown_select_action': '-- アクションを選択 --',
     'dropdown_no_module': '< モジュールなし >',
+    'dropdown_no_action': '< アクションなし >',
     # Messages / log
     'msg_loaded': '読み込み完了',
     'msg_no_images': 'エクスポートする画像がありません',
@@ -61,6 +62,7 @@ LANG = {
     # Fullscreen viewer
     'fullscreen_compare': '比較対象:',
     'fullscreen_tab_current': '{name} (現在)',
+    'meta_display_hint': '— Ctrl+スクロールでテキストサイズを変更 —',
     # Style editor
     'style_available_styles': '利用可能なスタイル',
     'style_actions': 'アクション',
@@ -125,4 +127,6 @@ LANG = {
     # Metadata
     'options_read_metadata': '画像メタデータを読む (PNG/WebP/JPG)',
     'hint_read_metadata': 'PNG、WebP、JPGファイルから生成パラメータを読み込みます（プロンプト、モデル、CFG、シード等）。全画面で画像をクリックするとオーバーレイを切り替えられます。',
+    'options_metadata_extra': 'Extra fields',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

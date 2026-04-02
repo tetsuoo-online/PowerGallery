@@ -32,8 +32,9 @@ LANG = {
     # Modules tab
     'options_module_none': '无模块',
     # Module dropdown
-    'dropdown_select_action': '-- 选择操作 --',
-    'dropdown_no_module': '< 无模块 >',
+    'dropdown_select_action': '-- Select action --',
+    'dropdown_no_module': '< No module >',
+    'dropdown_no_action': '< No action >',
     # Messages / log
     'msg_loaded': '已加载',
     'msg_no_images': '没有可导出的图片',
@@ -59,8 +60,9 @@ LANG = {
     'file_filter_images': '图片 (*.png *.jpg *.jpeg *.webp)',
     'file_filter_images_json': '图片和 JSON (*.png *.jpg *.jpeg *.webp *.json);;图片 (*.png *.jpg *.jpeg *.webp);;JSON (*.json);;所有文件 (*.*)',
     # Fullscreen viewer
-    'fullscreen_compare': '与以下对比:',
-    'fullscreen_tab_current': '{name} (当前)',
+    'fullscreen_compare': 'Compare with:',
+    'fullscreen_tab_current': '{name} (current)',
+    'meta_display_hint': '— Ctrl+滚轮 调整文字大小 —',
     # Style editor
     'style_available_styles': '可用样式',
     'style_actions': '操作',
@@ -125,4 +127,6 @@ LANG = {
     # Metadata
     'options_read_metadata': '读取图片元数据（PNG/WebP/JPG）',
     'hint_read_metadata': '从 PNG、WebP 和 JPG 文件中读取生成参数（提示词、模型、CFG、种子等）。在全屏模式下点击图片可切换叠加层。',
+    'options_metadata_extra': 'Extra fields',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

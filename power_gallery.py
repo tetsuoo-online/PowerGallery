@@ -306,6 +306,26 @@ def format_metadata_for_display(card):
 
 
 
+# ── Grid2Img settings ─────────────────────────────────────────────────────────
+
+_GRID2IMG_SETTINGS_FILE = Path(__file__).parent / 'config' / 'grid2img_settings.json'
+
+def _load_grid2img_settings():
+    try:
+        if _GRID2IMG_SETTINGS_FILE.exists():
+            return json.loads(_GRID2IMG_SETTINGS_FILE.read_text(encoding='utf-8'))
+    except Exception:
+        pass
+    return {}
+
+def _save_grid2img_settings(data):
+    try:
+        _GRID2IMG_SETTINGS_FILE.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    except Exception as e:
+        print(f"[grid2img] Save error: {e}")
+
+
 class Grid2ImgDialog(QDialog):
     from config.options_style import apply_options_style
 
@@ -446,7 +466,35 @@ class Grid2ImgDialog(QDialog):
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)
 
-    def get_options(self):
+        self._load_settings()
+
+    def _load_settings(self):
+        s = _load_grid2img_settings()
+        if not s:
+            return
+        self.bg_combo.setCurrentText(s.get('background', 'White'))
+        self.spacing_spin.setValue(s.get('spacing', 10))
+        self.padding_spin.setValue(s.get('padding', 20))
+        self.title_size_spin.setValue(s.get('title_size', 24))
+        self.text_size_spin.setValue(s.get('text_size', 14))
+        self.res_spin.setValue(s.get('res_max', 1024))
+        self.grid_count_spin.setValue(s.get('grid_count', 4))
+        self.grid_by_row.setChecked(s.get('grid_mode', 'column') == 'row')
+        self.grid_by_col.setChecked(s.get('grid_mode', 'column') == 'column')
+        self.fmt_png.setChecked(s.get('format', 'png') == 'png')
+        self.fmt_webp.setChecked(s.get('format', 'png') == 'webp')
+        for key in ['filename', 'title', 'description', 'prompt', 'negative_prompt',
+                    'model', 'cfg', 'sampler', 'steps', 'seed', 'lora', 'lora_strength']:
+            cb = getattr(self, f'field_{key}', None)
+            if cb:
+                cb.setChecked(key in s.get('fields', []))
+
+    def _save_settings(self):
+        opts = self.get_options(save=False)
+        opts['background'] = self.bg_combo.currentText()
+        _save_grid2img_settings(opts)
+
+    def get_options(self, save=True):
         bg_map = {
             "White": QColor("white"),
             "Black": QColor("black"),
@@ -470,7 +518,7 @@ class Grid2ImgDialog(QDialog):
         fmt = "webp" if self.fmt_webp.isChecked() else "png"
         grid_mode = "row" if self.grid_by_row.isChecked() else "column"
 
-        return {
+        result = {
             "title": self.title_edit.text().strip(),
             "background": bg_map[self.bg_combo.currentText()],
             "spacing": self.spacing_spin.value(),
@@ -483,6 +531,9 @@ class Grid2ImgDialog(QDialog):
             "grid_mode": grid_mode,
             "format": fmt,
         }
+        if save:
+            self._save_settings()
+        return result
 
 # ── Tab widget ────────────────────────────────────────────────────────────────
 
@@ -1956,7 +2007,7 @@ class GridTab(QWidget):
         } for card in self.cards]
 
         for card in self.cards[:]:
-            card.deleteLater()
+            card.setParent(None)
         self.cards.clear()
 
         module = self.get_active_module()
@@ -2096,7 +2147,15 @@ class MetadataOverlay(QWidget):
 
     def set_text(self, text):
         self._text = text
-        self.text_label.setText(text)
+        hint = f"\n\n{config.get_text('meta_display_hint')}"
+        if text:
+            hint_color = config.get_styles().COLORS.get('text2', '#888')
+            self.text_label.setText(
+                f'<span style="color:white;">{text.replace(chr(10), "<br>")}</span>'
+                f'<span style="color:{hint_color};">{hint.replace(chr(10), "<br>")}</span>'
+            )
+        else:
+            self.text_label.setText("no metadata")
 
     def toggle(self):
         self._visible = not self._visible
@@ -2374,12 +2433,12 @@ class FullscreenViewer(QWidget):
 
     def update_info_label(self):
         module = self.grid_tab.get_active_module()
-        ckpt = self.card.module_data.get('checkpoint_name', '') if module else ''
+        ckpt = self.card.module_data.get('display_title', '') if module else ''
         self.info_label.setText(
             f"{ckpt} - {os.path.basename(self.card.image_path)}"
             if ckpt else os.path.basename(self.card.image_path))
         if self.comparison_card:
-            ckpt2 = self.comparison_card.module_data.get('checkpoint_name', '') if module else ''
+            ckpt2 = self.comparison_card.module_data.get('display_title', '') if module else ''
             self.info_label2.setText(
                 f"{ckpt2} - {os.path.basename(self.comparison_card.image_path)}"
                 if ckpt2 else os.path.basename(self.comparison_card.image_path))
@@ -2494,7 +2553,6 @@ class SplashScreen(QWidget):
         font.setWeight(QFont.Weight.Normal)
         painter.setFont(font)
         painter.setPen(QColor('#555555'))
-        # painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, 'V 9')
         painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, f'V {config.get_version()}')
 
         n_dots = 5
@@ -2666,7 +2724,7 @@ class MainWindow(QMainWindow):
     # ── UI ────────────────────────────────────────────────────────────────────
 
     def refresh_ui_texts(self, lang_changed=False):
-        self.setWindowTitle(config.get_text('window_title'))
+        self.setWindowTitle(f"Power Gallery {config.get_version()}")
         for i in range(self.tabs.count()):
             tab = self.tabs.widget(i)
             if hasattr(tab, 'refresh_ui_texts'):
