@@ -33,8 +33,9 @@ LANG = {
     # Modules tab
     'options_module_none': 'Aucun module',
     # Module dropdown
-    'dropdown_select_action': '-- Sélectionner une action --',
-    'dropdown_no_module': '< Aucun module >',
+    'dropdown_select_action': '-- Select action --',
+    'dropdown_no_module': '< No module >',
+    'dropdown_no_action': '< Pas d\'action >',
     # Messages / log
     'msg_loaded': 'Chargé',
     'msg_no_images': 'Aucune image à exporter',
@@ -126,4 +127,6 @@ LANG = {
     # Metadata
     'options_read_metadata': 'Lire les métadonnées (PNG/WebP/JPG)',
     'hint_read_metadata': "Lit les paramètres de génération depuis les fichiers PNG, WebP et JPG (prompt, modèle, CFG, seed…). Cliquez sur l'image en plein écran pour afficher/masquer.",
+    'options_metadata_extra': 'Infos supplémentaires',
+    'hint_metadata_extra': 'Affiche des champs de métadonnées supplémentaires (données transmises par ExifTool).',
 }

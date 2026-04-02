@@ -35,6 +35,7 @@ LANG = {
     # Module dropdown
     'dropdown_select_action': '-- Select action --',
     'dropdown_no_module': '< No module >',
+    'dropdown_no_action': '< No action >',
     # Messages / log
     'msg_loaded': 'Loaded',
     'msg_no_images': 'No images to export',
@@ -127,5 +128,5 @@ LANG = {
     'options_read_metadata': 'Read image metadata (PNG/WebP/JPG)',
     'hint_read_metadata': 'Reads generation parameters from PNG, WebP and JPG files (prompt, model, CFG, seed…). Click on image in fullscreen mode to toggle overlay.',
     'options_metadata_extra': 'Extra fields',
-    'hint_metadata_extra': 'Show additional metadata fields in the overlay (ExifTool pass-through data).',
+    'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
 }

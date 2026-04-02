@@ -19,6 +19,7 @@ _DEFAULTS = {
     'language': 'en',
     'import_mode': 'replace',
     'import_in_tabs': False,
+    'import_recursive': False,
     'auto_load_last': True,
     'auto_save_session': True,
     'selected_module': None,

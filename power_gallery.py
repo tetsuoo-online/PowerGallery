@@ -313,7 +313,7 @@ class Grid2ImgDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Grid2Img")
-        self.resize(320, 420)
+        self.resize(380, 620)
         self.apply_options_style()
 
         layout = QVBoxLayout(self)
@@ -348,20 +348,96 @@ class Grid2ImgDialog(QDialog):
         form.addRow("Text size:", self.text_size_spin)
 
         layout.addLayout(form)
+
+        # ── Resolution max ────────────────────────────────────────────────────
+        res_group = QGroupBox("Max resolution")
+        res_layout = QHBoxLayout()
+        self.res_spin = QSpinBox()
+        self.res_spin.setRange(256, 16384)
+        self.res_spin.setValue(1024)
+        self.res_spin.setSuffix(" px")
+        self.res_spin.setFixedWidth(90)
+        res_layout.addWidget(self.res_spin)
+        res_layout.addStretch()
+        res_group.setLayout(res_layout)
+        layout.addWidget(res_group)
+
+        # ── Grid count ────────────────────────────────────────────────────────
+        grid_group = QGroupBox("Images per line")
+        grid_layout = QHBoxLayout()
+        self.grid_count_spin = QSpinBox()
+        self.grid_count_spin.setRange(1, 50)
+        self.grid_count_spin.setValue(4)
+        self.grid_count_spin.setFixedWidth(60)
+        self.grid_by_row = QCheckBox("by row")
+        self.grid_by_col = QCheckBox("by column")
+        self.grid_by_col.setChecked(True)
+
+        def _toggle_row(c):
+            if c:
+                self.grid_by_col.setChecked(False)
+            elif not self.grid_by_col.isChecked():
+                self.grid_by_row.setChecked(True)
+        def _toggle_col(c):
+            if c:
+                self.grid_by_row.setChecked(False)
+            elif not self.grid_by_row.isChecked():
+                self.grid_by_col.setChecked(True)
+        self.grid_by_row.toggled.connect(_toggle_row)
+        self.grid_by_col.toggled.connect(_toggle_col)
+
+        grid_layout.addWidget(self.grid_count_spin)
+        grid_layout.addWidget(self.grid_by_row)
+        grid_layout.addWidget(self.grid_by_col)
+        grid_layout.addStretch()
+        grid_group.setLayout(grid_layout)
+        layout.addWidget(grid_group)
+
+        # ── Format ────────────────────────────────────────────────────────────
+        fmt_group = QGroupBox("Output format")
+        fmt_layout = QHBoxLayout()
+        self.fmt_png = QCheckBox("PNG")
+        self.fmt_webp = QCheckBox("WebP")
+        self.fmt_png.setChecked(True)
+        def _toggle_png(c):
+            if c:
+                self.fmt_webp.setChecked(False)
+            elif not self.fmt_webp.isChecked():
+                self.fmt_png.setChecked(True)
+        def _toggle_webp(c):
+            if c:
+                self.fmt_png.setChecked(False)
+            elif not self.fmt_png.isChecked():
+                self.fmt_webp.setChecked(True)
+        self.fmt_png.toggled.connect(_toggle_png)
+        self.fmt_webp.toggled.connect(_toggle_webp)
+        fmt_layout.addWidget(self.fmt_png)
+        fmt_layout.addWidget(self.fmt_webp)
+        fmt_layout.addStretch()
+        fmt_group.setLayout(fmt_layout)
+        layout.addWidget(fmt_group)
+
+        # ── Fields ────────────────────────────────────────────────────────────
         layout.addWidget(QLabel("Fields to print under each image:"))
 
-        self.field_prompt = QCheckBox("Prompt")
-        self.field_checkpoint = QCheckBox("Checkpoint")
-        self.field_cfg = QCheckBox("CFG")
-        self.field_sampler = QCheckBox("Sampler")
-        self.field_steps = QCheckBox("Steps")
-        self.field_seed = QCheckBox("Seed")
-        self.field_lora = QCheckBox("LoRA")
+        self.field_filename  = QCheckBox("Filename")
+        self.field_title     = QCheckBox("Title")
+        self.field_description = QCheckBox("Description")
+        self.field_prompt    = QCheckBox("Prompt")
+        self.field_neg       = QCheckBox("Negative prompt")
+        self.field_model     = QCheckBox("Model")
+        self.field_cfg       = QCheckBox("CFG")
+        self.field_sampler   = QCheckBox("Sampler")
+        self.field_steps     = QCheckBox("Steps")
+        self.field_seed      = QCheckBox("Seed")
+        self.field_lora      = QCheckBox("LoRA")
         self.field_lora_strength = QCheckBox("LoRA strength")
-        self.field_checkpoint.setChecked(True)
+        self.field_model.setChecked(True)
 
         for w in [
-            self.field_prompt, self.field_checkpoint, self.field_cfg, self.field_sampler,
+            self.field_filename, self.field_title, self.field_description,
+            self.field_prompt, self.field_neg,
+            self.field_model, self.field_cfg, self.field_sampler,
             self.field_steps, self.field_seed, self.field_lora, self.field_lora_strength,
         ]:
             layout.addWidget(w)
@@ -379,22 +455,22 @@ class Grid2ImgDialog(QDialog):
             "Light Gray": QColor(235, 235, 235),
         }
         fields = []
-        if self.field_prompt.isChecked():
-            fields.append("prompt")
-        if self.field_checkpoint.isChecked():
-            fields.append("checkpoint")
-        if self.field_cfg.isChecked():
-            fields.append("cfg")
-        if self.field_sampler.isChecked():
-            fields.append("sampler")
-        if self.field_steps.isChecked():
-            fields.append("steps")
-        if self.field_seed.isChecked():
-            fields.append("seed")
-        if self.field_lora.isChecked():
-            fields.append("lora")
-        if self.field_lora_strength.isChecked():
-            fields.append("lora_strength")
+        if self.field_filename.isChecked():    fields.append("filename")
+        if self.field_title.isChecked():       fields.append("title")
+        if self.field_description.isChecked(): fields.append("description")
+        if self.field_prompt.isChecked():      fields.append("prompt")
+        if self.field_neg.isChecked():         fields.append("negative_prompt")
+        if self.field_model.isChecked():       fields.append("model")
+        if self.field_cfg.isChecked():         fields.append("cfg")
+        if self.field_sampler.isChecked():     fields.append("sampler")
+        if self.field_steps.isChecked():       fields.append("steps")
+        if self.field_seed.isChecked():        fields.append("seed")
+        if self.field_lora.isChecked():        fields.append("lora")
+        if self.field_lora_strength.isChecked(): fields.append("lora_strength")
+
+        fmt = "webp" if self.fmt_webp.isChecked() else "png"
+        grid_mode = "row" if self.grid_by_row.isChecked() else "column"
+
         return {
             "title": self.title_edit.text().strip(),
             "background": bg_map[self.bg_combo.currentText()],
@@ -403,6 +479,10 @@ class Grid2ImgDialog(QDialog):
             "title_size": self.title_size_spin.value(),
             "text_size": self.text_size_spin.value(),
             "fields": fields,
+            "res_max": self.res_spin.value(),
+            "grid_count": self.grid_count_spin.value(),
+            "grid_mode": grid_mode,
+            "format": fmt,
         }
 
 # ── Tab widget ────────────────────────────────────────────────────────────────
@@ -508,6 +588,9 @@ class OptionsDialog(QDialog):
 
         self.import_in_tabs = QCheckBox(config.get_text('options_import_in_tabs'))
         self.import_in_tabs.setChecked(config.get('import_in_tabs'))
+        self.import_recursive = QCheckBox(config.get_text('options_import_recursive'))
+        self.import_recursive.setChecked(config.get('import_recursive') or False)
+        self._install_option_hover(self.import_recursive, 'hint_import_recursive')
         self.auto_load_last = QCheckBox(config.get_text('options_auto_load_last'))
         self.auto_load_last.setChecked(config.get('auto_load_last'))
         self.auto_save_session = QCheckBox(config.get_text('options_auto_save_session'))
@@ -519,7 +602,6 @@ class OptionsDialog(QDialog):
         self.read_metadata = QCheckBox(config.get_text('options_read_metadata'))
         self.read_metadata.setChecked(config.get('read_metadata') or False)
 
-        # Sub-option: Extra fields (indented, enabled only when read_metadata is on)
         self.metadata_extra = QCheckBox(config.get_text('options_metadata_extra'))
         self.metadata_extra.setChecked(config.get('show_metadata_extra') or False)
         self.metadata_extra.setEnabled(config.get('read_metadata') or False)
@@ -562,6 +644,7 @@ class OptionsDialog(QDialog):
         layout.addWidget(lang_group)
         layout.addWidget(import_group)
         layout.addWidget(self.import_in_tabs)
+        layout.addWidget(self.import_recursive)
         layout.addWidget(self.auto_load_last)
         layout.addWidget(self.auto_save_session)
         layout.addWidget(self.show_title)
@@ -588,6 +671,7 @@ class OptionsDialog(QDialog):
         current_module = config.get('selected_module')
 
         self.module_checkboxes = {}
+        self.module_settings_map = {}   # key → settings widget
         self.module_settings_widgets = []
 
         self.module_none = QCheckBox(config.get_text('options_module_none'))
@@ -604,13 +688,17 @@ class OptionsDialog(QDialog):
             if hasattr(module_class, 'get_settings_widget'):
                 extra = module_class.get_settings_widget(config)
                 if extra:
+                    extra.setVisible(current_module == key)
                     layout.addWidget(extra)
+                    self.module_settings_map[key] = extra
                     self.module_settings_widgets.append(extra)
 
         def on_none(checked):
             if checked:
-                for c in self.module_checkboxes.values():
+                for k, c in self.module_checkboxes.items():
                     c.setChecked(False)
+                for w in self.module_settings_map.values():
+                    w.setVisible(False)
             elif not any(c.isChecked() for c in self.module_checkboxes.values()):
                 self.module_none.setChecked(True)
 
@@ -621,8 +709,13 @@ class OptionsDialog(QDialog):
                     for k, c in self.module_checkboxes.items():
                         if k != selected_key:
                             c.setChecked(False)
-                elif not any(c.isChecked() for c in self.module_checkboxes.values()):
-                    self.module_none.setChecked(True)
+                    for k, w in self.module_settings_map.items():
+                        w.setVisible(k == selected_key)
+                else:
+                    if selected_key in self.module_settings_map:
+                        self.module_settings_map[selected_key].setVisible(False)
+                    if not any(c.isChecked() for c in self.module_checkboxes.values()):
+                        self.module_none.setChecked(True)
             return on_toggle
 
         self.module_none.toggled.connect(on_none)
@@ -672,6 +765,7 @@ class OptionsDialog(QDialog):
             config.set_language(selected_lang_item.data(Qt.ItemDataRole.UserRole))
         config.set_import_mode('replace' if self.import_replace.isChecked() else 'add')
         config.set_import_in_tabs(self.import_in_tabs.isChecked())
+        config.set('import_recursive', self.import_recursive.isChecked())
         config.set_auto_load_last(self.auto_load_last.isChecked())
         config.set_auto_save_session(self.auto_save_session.isChecked())
         config.set('show_title', self.show_title.isChecked())
@@ -1013,6 +1107,11 @@ class GridTab(QWidget):
         self.update_module_dropdown()
         self.module_dropdown.currentIndexChanged.connect(self.on_module_action_selected)
 
+        self.module_selector = QComboBox()
+        self.module_selector.setMinimumWidth(160)
+        self._populate_module_selector()
+        self.module_selector.currentIndexChanged.connect(self.on_module_selector_changed)
+
         self.import_btn = QPushButton(config.get_text('btn_import'))
         self.import_btn.clicked.connect(self.import_grid)
 
@@ -1035,6 +1134,7 @@ class GridTab(QWidget):
 
         controls1.addWidget(self.close_tab_btn)
         controls1.addWidget(self.options_btn)
+        controls1.addWidget(self.module_selector)
         controls1.addWidget(self.module_dropdown)
         controls1.addWidget(self.import_btn)
         controls1.addWidget(self.save_tabs_btn)
@@ -1106,6 +1206,32 @@ class GridTab(QWidget):
         button.enterEvent = lambda e, k=text_key, c=color_key: self._show_hover(k, c)
         button.leaveEvent = lambda e: self._hide_hover()
 
+    def _populate_module_selector(self):
+        self.module_selector.blockSignals(True)
+        self.module_selector.clear()
+        self.module_selector.addItem(config.get_text('dropdown_no_module'), None)
+        current = config.get('selected_module')
+        select_idx = 0
+        for i, (key, cls) in enumerate(MODULE_REGISTRY.items(), 1):
+            name = cls.get_module_name() if hasattr(cls, 'get_module_name') else key
+            self.module_selector.addItem(name, key)
+            if key == current:
+                select_idx = i
+        self.module_selector.setCurrentIndex(select_idx)
+        self.module_selector.blockSignals(False)
+
+    def on_module_selector_changed(self, index):
+        key = self.module_selector.itemData(index)
+        if key == config.get('selected_module'):
+            return
+        config.set_selected_module(key)
+        self.update_module_dropdown()
+        if self.cards:
+            self.refresh_cards()
+        mw = self.get_main_window()
+        if mw:
+            mw.apply_styles()
+
     # ── Module dropdown ───────────────────────────────────────────────────────
 
     def update_module_dropdown(self):
@@ -1123,14 +1249,16 @@ class GridTab(QWidget):
                 name = module.get_module_name() if hasattr(module, 'get_module_name') else module_name
                 self.module_dropdown.addItem(f"< {name} >")
         else:
-            self.module_dropdown.addItem(config.get_text('dropdown_no_module'))
+            self.module_dropdown.addItem(config.get_text('dropdown_no_action'))
         self.module_dropdown.setCurrentIndex(0)
 
     def on_module_action_selected(self, index):
         if index <= 0:
             return
         text = self.module_dropdown.currentText()
-        if text in (config.get_text('dropdown_no_module'), config.get_text('dropdown_select_action')):
+        if text in (config.get_text('dropdown_no_module'),
+                    config.get_text('dropdown_no_action'),
+                    config.get_text('dropdown_select_action')):
             return
 
         module_name = config.get('selected_module')
@@ -1161,6 +1289,7 @@ class GridTab(QWidget):
             old_show_title != config.get('show_title') or
             old_show_description != config.get('show_description')
         )
+        self._populate_module_selector()
         if cards_need_refresh:
             self.refresh_cards()
         self.update_module_dropdown()
@@ -1236,12 +1365,19 @@ class GridTab(QWidget):
             event.acceptProposedAction()
 
     def drop_zone_drop(self, event):
-        files, json_files = [], []
+        files, json_files, folders = [], [], []
         for url in event.mimeData().urls():
             fp = url.toLocalFile()
-            (json_files if fp.lower().endswith('.json')
-             else files if fp.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
-             else []).append(fp)
+            if os.path.isdir(fp):
+                folders.append(fp)
+            elif fp.lower().endswith('.json'):
+                json_files.append(fp)
+            elif fp.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                files.append(fp)
+
+        # Expand folders to images
+        if folders:
+            files = GridTab._collect_images_from_paths(folders) + files
 
         import_in_tabs = config.get('import_in_tabs')
         should_new_tab = import_in_tabs and len(self.cards) > 0
@@ -1271,6 +1407,26 @@ class GridTab(QWidget):
             self._route_import_json(json_files[0], should_new_tab)
         elif image_files:
             self._route_load_images(image_files, should_new_tab)
+
+    @staticmethod
+    def _collect_images_from_paths(paths):
+        """Expand folders to image files; respects import_recursive setting."""
+        image_exts = ('.png', '.jpg', '.jpeg', '.webp')
+        images = []
+        for path in paths:
+            if os.path.isdir(path):
+                p = Path(path)
+                if config.get('import_recursive'):
+                    for ext in image_exts:
+                        images.extend(str(f) for f in sorted(p.rglob(f'*{ext}')))
+                else:
+                    images.extend(
+                        str(f) for f in sorted(p.iterdir())
+                        if f.is_file() and f.suffix.lower() in image_exts
+                    )
+            elif path.lower().endswith(image_exts):
+                images.append(path)
+        return images
 
     def _route_import_json(self, file_path, new_tab):
         if new_tab:
@@ -1600,31 +1756,58 @@ class GridTab(QWidget):
                 return v
             return None
 
-        values["checkpoint"] = first_non_empty(
+        values["filename"] = os.path.basename(card.image_path)
+        values["title"] = (
+            card.title_edit.text().strip() if hasattr(card, 'title_edit') and card.title_edit else None
+        ) or raw.get("title")
+        values["description"] = (
+            card.description_edit.toPlainText().strip() if hasattr(card, 'description_edit') and card.description_edit else None
+        ) or raw.get("description")
+        values["model"] = first_non_empty(
             card.module_data.get('checkpoint_name'), raw.get("checkpointName"), meta.get('model')
         )
         values["prompt"] = first_non_empty(
-            module.get("prompt"), raw.get("prompt"), raw.get("positivePrompt"), raw.get("description"), getattr(card, "description", None), meta.get('prompt')
+            module.get("prompt"), raw.get("prompt"), raw.get("positivePrompt"), meta.get('prompt')
+        )
+        values["negative_prompt"] = first_non_empty(
+            raw.get("negative_prompt"), raw.get("negativePrompt"), meta.get('negative_prompt')
         )
         values["cfg"] = first_non_empty(module.get("cfg"), raw.get("cfg"), raw.get("cfgScale"), meta.get('cfg'))
         values["sampler"] = first_non_empty(module.get("sampler"), raw.get("sampler"), meta.get('sampler'))
         values["steps"] = first_non_empty(module.get("steps"), raw.get("steps"), meta.get('steps'))
         values["seed"] = first_non_empty(module.get("seed"), raw.get("seed"), meta.get('seed'))
-        values["lora"] = first_non_empty(module.get("lora"), raw.get("lora"), raw.get("loraName"), meta.get('lora_hashes'))
+        # LoRA: strip hashes (format: "name:hash, name:hash" or "name:strength:hash")
+        raw_lora = first_non_empty(module.get("lora"), raw.get("lora"), raw.get("loraName"), meta.get('lora_hashes'))
+        values["lora"] = self._clean_lora_hashes(raw_lora) if raw_lora else None
         values["lora_strength"] = first_non_empty(module.get("loraStrength"), raw.get("loraStrength"), raw.get("lora_strength"))
         return values
+
+    @staticmethod
+    def _clean_lora_hashes(lora_str):
+        """Remove hash values from LoRA strings. Handles 'name: hash, name2: hash2' format."""
+        import re as _re
+        # Format from exiftool lora_hashes: "loraname: abcdef1234, other: deadbeef"
+        # Strip the ': hexhash' parts
+        cleaned = _re.sub(r':\s*[0-9a-fA-F]{6,}\b', '', str(lora_str))
+        # Clean up extra commas/spaces
+        parts = [p.strip().strip(',').strip() for p in cleaned.split(',') if p.strip().strip(',').strip()]
+        return ', '.join(parts) if parts else lora_str
 
     def build_card_export_lines(self, card, selected_fields):
         values = self.get_card_export_values(card)
         labels = {
-            "prompt": "Prompt",
-            "checkpoint": "Checkpoint",
-            "cfg": "CFG",
-            "sampler": "Sampler",
-            "steps": "Steps",
-            "seed": "Seed",
-            "lora": "LoRA",
-            "lora_strength": "LoRA strength",
+            "filename":       "File",
+            "title":          "Title",
+            "description":    "Description",
+            "prompt":         "Prompt",
+            "negative_prompt":"Neg",
+            "model":          "Model",
+            "cfg":            "CFG",
+            "sampler":        "Sampler",
+            "steps":          "Steps",
+            "seed":           "Seed",
+            "lora":           "LoRA",
+            "lora_strength":  "LoRA strength",
         }
         lines = []
         for key in selected_fields:
@@ -1634,8 +1817,6 @@ class GridTab(QWidget):
             text = str(val).strip()
             if not text:
                 continue
-            if key == "prompt" and len(text) > 180:
-                text = text[:177] + "..."
             lines.append(f"{labels[key]}: {text}")
         return lines
 
@@ -1645,11 +1826,31 @@ class GridTab(QWidget):
             QMessageBox.information(self, "Grid2Img", "No images to export.")
             return
 
-        path, _ = QFileDialog.getSaveFileName(self, "Save grid image", "grid_export.png", "PNG Images (*.png)")
+        fmt = options.get("format", "png")
+        if fmt == "webp":
+            filter_str = "WebP Images (*.webp)"
+            default_name = "grid_export.webp"
+        else:
+            filter_str = "PNG Images (*.png)"
+            default_name = "grid_export.png"
+
+        path, _ = QFileDialog.getSaveFileName(self, "Save grid image", default_name, filter_str)
         if not path:
             return
 
-        columns = max(1, self.grid_layout.columnCount())
+        # ── Compute columns ───────────────────────────────────────────────────
+        grid_count = options.get("grid_count", 4)
+        grid_mode = options.get("grid_mode", "column")  # 'row' or 'column'
+        n = len(cards)
+
+        if grid_mode == "column":
+            # grid_count = images per column (= number of columns)
+            columns = grid_count
+        else:
+            # grid_mode == "row": grid_count = images per row (= number of rows)
+            rows_target = grid_count
+            columns = max(1, -(-n // rows_target))  # ceil division
+
         spacing = options["spacing"]
         padding = options["padding"]
         title = options["title"]
@@ -1657,9 +1858,14 @@ class GridTab(QWidget):
         text_size = options["text_size"]
         bg = options["background"]
         selected_fields = options["fields"]
+        res_max = options.get("res_max", 4096)
 
         cell_width = self.card_size
         thumb_height = self.card_size
+
+        # ── Apply per-image resolution limit ─────────────────────────────────
+        cell_width = res_max
+        thumb_height = res_max
 
         title_font = QFont()
         title_font.setPointSize(title_size)
@@ -1675,14 +1881,14 @@ class GridTab(QWidget):
         for lines in card_lines:
             h = 0
             for line in lines:
-                br = fm_text.boundingRect(0, 0, cell_width, 1000, int(Qt.TextFlag.TextWordWrap), line)
+                br = fm_text.boundingRect(0, 0, cell_width, 10000, int(Qt.TextFlag.TextWordWrap), line)
                 h += br.height() + 4
             line_heights.append(h)
 
         cell_heights = [thumb_height + (8 + h if h > 0 else 0) for h in line_heights]
         max_cell_height = max(cell_heights) if cell_heights else thumb_height
         title_height = fm_title.height() + spacing if title else 0
-        rows = (len(cards) + columns - 1) // columns
+        rows = (n + columns - 1) // columns
 
         canvas_width = padding * 2 + columns * cell_width + (columns - 1) * spacing
         canvas_height = padding * 2 + title_height + rows * max_cell_height + (rows - 1) * spacing
@@ -1700,7 +1906,9 @@ class GridTab(QWidget):
 
         if title:
             painter.setFont(title_font)
-            painter.drawText(QRect(padding, y0, canvas_width - 2 * padding, fm_title.height() + 10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, title)
+            painter.drawText(
+                QRect(padding, y0, canvas_width - 2 * padding, fm_title.height() + 10),
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, title)
             y0 += title_height
 
         for idx, card in enumerate(cards):
@@ -1714,7 +1922,9 @@ class GridTab(QWidget):
                 continue
 
             cropped = card.smart_square_crop(pm)
-            thumb = cropped.scaled(cell_width, thumb_height, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            thumb = cropped.scaled(cell_width, thumb_height,
+                                   Qt.AspectRatioMode.IgnoreAspectRatio,
+                                   Qt.TransformationMode.SmoothTransformation)
             painter.drawPixmap(x, y, thumb)
 
             lines = card_lines[idx]
@@ -1722,14 +1932,15 @@ class GridTab(QWidget):
                 painter.setFont(text_font)
                 ty = y + thumb_height + 8
                 for line in lines:
-                    rect = QRect(x, ty, cell_width, 1000)
+                    rect = QRect(x, ty, cell_width, 10000)
                     br = painter.boundingRect(rect, int(Qt.TextFlag.TextWordWrap), line)
                     painter.drawText(rect, int(Qt.TextFlag.TextWordWrap), line)
                     ty += br.height() + 4
 
         painter.end()
 
-        if not canvas.save(path):
+        quality = 90 if fmt == "webp" else -1
+        if not canvas.save(path, fmt.upper(), quality):
             QMessageBox.warning(self, "Grid2Img", "Failed to save image.")
             return
 
@@ -1778,6 +1989,7 @@ class GridTab(QWidget):
         self.refresh_btn.setText(config.get_text('btn_refresh'))
         self.size_label.setText(config.get_text('slider_label') + ":")
         self.drop_zone.setText(config.get_text('drop_zone_text'))
+        self._populate_module_selector()
         self.update_module_dropdown()
         self._set_idle()
         if lang_changed:
@@ -1821,7 +2033,6 @@ class GridTab(QWidget):
 class MetadataOverlay(QWidget):
     """
     Semi-transparent overlay panel showing image metadata.
-    Drawn on top of the image_container using absolute positioning.
     side: 'left' | 'right'
     Ctrl+scroll to change text size.
     """
@@ -1849,14 +2060,14 @@ class MetadataOverlay(QWidget):
         self._apply_font()
         self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
-        scroll = QScrollArea()
-        scroll.setWidget(self.text_label)
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
-        scroll.viewport().setStyleSheet("background: transparent;")
-        scroll.viewport().installEventFilter(self)
+        self._scroll = QScrollArea()
+        self._scroll.setWidget(self.text_label)
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        self._scroll.viewport().setStyleSheet("background: transparent;")
+        self._scroll.viewport().installEventFilter(self)
 
-        layout.addWidget(scroll)
+        layout.addWidget(self._scroll)
         self.setLayout(layout)
 
     def _apply_font(self):
@@ -1865,14 +2076,24 @@ class MetadataOverlay(QWidget):
         )
 
     def eventFilter(self, obj, event):
-        if event.type() == event.Type.Wheel:
-            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                delta = event.angleDelta().y()
-                self._font_size += (1 if delta > 0 else -1)
-                self._font_size = max(self.MIN_FONT, min(self.MAX_FONT, self._font_size))
-                self._apply_font()
-                return True
-        return super().eventFilter(obj, event)
+        try:
+            if event.type() == event.Type.Wheel:
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    self._font_size += 1 if event.angleDelta().y() > 0 else -1
+                    self._font_size = max(self.MIN_FONT, min(self.MAX_FONT, self._font_size))
+                    self._apply_font()
+                    return True
+            return super().eventFilter(obj, event)
+        except RuntimeError:
+            return False
+
+    def hideEvent(self, event):
+        try:
+            if hasattr(self, '_scroll'):
+                self._scroll.viewport().removeEventFilter(self)
+        except RuntimeError:
+            pass
+        super().hideEvent(event)
 
     def set_text(self, text):
         self._text = text
@@ -1924,6 +2145,8 @@ class MetadataOverlay(QWidget):
 class FullscreenViewer(QWidget):
     def __init__(self, card, grid_tab, main_window, parent=None):
         super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocus()
         self.card = card
         self.grid_tab = grid_tab
         self.main_window = main_window
@@ -1999,6 +2222,7 @@ class FullscreenViewer(QWidget):
         self.image_container.mouseReleaseEvent = self.mouseReleaseEvent
         self.image_container.paintEvent = self.paint_image
         self.image_container.resizeEvent = self._on_image_container_resize
+        self.image_container.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         # Metadata overlays
         self.meta_overlay_left = MetadataOverlay(self.image_container, side='left')
@@ -2218,6 +2442,89 @@ class FullscreenViewer(QWidget):
             self.show_next_image()
 
 
+# ── Splash Screen ───────────────────────────────────────────────────────────────
+
+class SplashScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.SplashScreen
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedSize(400, 260)
+
+        screen = QApplication.primaryScreen().geometry()
+        self.move(
+            (screen.width() - self.width()) // 2,
+            (screen.height() - self.height()) // 2
+        )
+
+        self._phase = 0.0
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start(16)
+
+    def _tick(self):
+        self._phase += 0.04
+        self.update()
+
+    @staticmethod
+    def _ease(t):
+        import math
+        return 0.5 - 0.5 * math.cos(math.pi * t)
+
+    def paintEvent(self, event):
+        import math
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        painter.setBrush(QColor('#1e1e1e'))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(self.rect(), 16, 16)
+
+        font = QFont()
+        font.setPointSize(22)
+        font.setWeight(QFont.Weight.Medium)
+        painter.setFont(font)
+        painter.setPen(QColor('white'))
+        painter.drawText(self.rect().adjusted(0, -40, 0, 0), Qt.AlignmentFlag.AlignCenter, 'Power Gallery')
+
+        font.setPointSize(8)
+        font.setWeight(QFont.Weight.Normal)
+        painter.setFont(font)
+        painter.setPen(QColor('#555555'))
+        painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, 'V 9')
+
+        n_dots = 5
+        dot_r = 5
+        dot_gap = 22
+        p = self._phase % n_dots
+        total_w = (n_dots - 1) * dot_gap
+        start_x = (self.width() - total_w) // 2
+        y = self.height() // 2 + 55
+
+        for i in range(n_dots):
+            dist = abs(p - i)
+            if dist > n_dots / 2:
+                dist = n_dots - dist
+            t = min(dist / 1.5, 1.0)
+            ease = self._ease(t)
+            scale = 0.8 + (1.0 - ease) * 0.9
+            alpha = int((0.12 + (1.0 - ease) * 0.88) * 255)
+
+            color = QColor('#2196F3')
+            color.setAlpha(alpha)
+            painter.setBrush(color)
+            painter.setPen(Qt.PenStyle.NoPen)
+
+            cx = start_x + i * dot_gap
+            r = int(dot_r * scale)
+            painter.drawEllipse(cx - r, y - r, r * 2, r * 2)
+
+        painter.end()
+
 # ── Main window ───────────────────────────────────────────────────────────────
 
 class MainWindow(QMainWindow):
@@ -2407,21 +2714,24 @@ class MainWindow(QMainWindow):
                 tab.drop_zone.setVisible(self.ui_state_level2)
 
     def eventFilter(self, obj, event):
-        if event.type() == event.Type.Wheel:
-            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                for i in range(self.tabs.count()):
-                    tab = self.tabs.widget(i)
-                    if isinstance(tab, GridTab) and obj == tab.scroll_area.viewport():
-                        delta = event.angleDelta().y()
-                        step = 50
-                        new_value = tab.size_slider.value() + (step if delta > 0 else -step)
-                        new_value = max(tab.size_slider.minimum(),
-                                        min(tab.size_slider.maximum(), new_value))
-                        tab.size_slider.setValue(new_value)
-                        self.pending_zoom_value = new_value
-                        self.zoom_timer.start(150)
-                        return True
-        return super().eventFilter(obj, event)
+        try:
+            if event.type() == event.Type.Wheel:
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    for i in range(self.tabs.count()):
+                        tab = self.tabs.widget(i)
+                        if isinstance(tab, GridTab) and obj == tab.scroll_area.viewport():
+                            delta = event.angleDelta().y()
+                            step = 50
+                            new_value = tab.size_slider.value() + (step if delta > 0 else -step)
+                            new_value = max(tab.size_slider.minimum(),
+                                            min(tab.size_slider.maximum(), new_value))
+                            tab.size_slider.setValue(new_value)
+                            self.pending_zoom_value = new_value
+                            self.zoom_timer.start(150)
+                            return True
+            return super().eventFilter(obj, event)
+        except RuntimeError:
+            return False
 
     def apply_pending_zoom(self):
         if self.pending_zoom_value is not None:
@@ -2453,10 +2763,22 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
 
+    splash = SplashScreen()
+    splash.show()
+    app.processEvents()
+
+    import time
+    _start = time.time()
+
+    def _finish():
+        window = MainWindow()
+        elapsed = time.time() - _start
+        remaining = max(0, 3.0 - elapsed)
+        QTimer.singleShot(int(remaining * 1000), lambda: (splash.close(), window.show()))
+
+    QTimer.singleShot(50, _finish)
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
