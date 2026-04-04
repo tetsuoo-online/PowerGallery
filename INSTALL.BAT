@@ -32,7 +32,7 @@ set SCRIPT_DIR=%~dp0
 >> "%TEMP%\make_shortcut.vbs" echo Set s = ws.CreateShortcut("%SCRIPT_DIR%Power Gallery.lnk")
 >> "%TEMP%\make_shortcut.vbs" echo s.TargetPath = "%SCRIPT_DIR%START.BAT"
 >> "%TEMP%\make_shortcut.vbs" echo s.WorkingDirectory = "%SCRIPT_DIR%"
->> "%TEMP%\make_shortcut.vbs" echo s.IconLocation = "%SCRIPT_DIR%assets/powergallery.ico"
+>> "%TEMP%\make_shortcut.vbs" echo s.IconLocation = "%SCRIPT_DIR%powergallery.ico"
 >> "%TEMP%\make_shortcut.vbs" echo s.WindowStyle = 7
 >> "%TEMP%\make_shortcut.vbs" echo s.Save()
 
