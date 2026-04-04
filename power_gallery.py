@@ -2457,6 +2457,7 @@ class FullscreenViewer(QWidget):
         if hide_tab_selector:
             grid_label.setVisible(False)
             self.grid_combo.setVisible(False)
+        self._hide_tab_selector = hide_tab_selector
 
         top_bar.addWidget(close_btn)
         top_bar.addStretch()
@@ -2699,10 +2700,11 @@ class FullscreenViewer(QWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.close()
-        elif event.key() == Qt.Key.Key_Left:
-            self.show_previous_image()
-        elif event.key() == Qt.Key.Key_Right:
-            self.show_next_image()
+        elif not self._hide_tab_selector:
+            if event.key() == Qt.Key.Key_Left:
+                self.show_previous_image()
+            elif event.key() == Qt.Key.Key_Right:
+                self.show_next_image()
 
 
 # ── Splash Screen ───────────────────────────────────────────────────────────────
