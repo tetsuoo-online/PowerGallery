@@ -129,4 +129,12 @@ LANG = {
     'hint_read_metadata': '从 PNG、WebP 和 JPG 文件中读取生成参数（提示词、模型、CFG、种子等）。在全屏模式下点击图片可切换叠加层。',
     'options_metadata_extra': 'Extra fields',
     'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
+    # Img Compare
+    'imgcompare_title': '图像比较',
+    'imgcompare_hint': '从网格或文件资源管理器中拖动一张图片',
+    'imgcompare_left': '左',
+    'imgcompare_right': '右',
+    'imgcompare_drop_here': '放在这里',
+    'imgcompare_cancel': '取消',
+    'imgcompare_compare_btn': '比较 →',
 }

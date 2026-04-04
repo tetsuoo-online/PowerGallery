@@ -129,4 +129,12 @@ LANG = {
     'hint_read_metadata': 'PNG、WebP、JPGファイルから生成パラメータを読み込みます（プロンプト、モデル、CFG、シード等）。全画面で画像をクリックするとオーバーレイを切り替えられます。',
     'options_metadata_extra': 'Extra fields',
     'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
+    # Img Compare
+    'imgcompare_title': '画像を比較',
+    'imgcompare_hint': 'グリッドまたはファイルエクスプローラーから画像をドラッグしてください',
+    'imgcompare_left': '左',
+    'imgcompare_right': '右',
+    'imgcompare_drop_here': 'ここにドロップ',
+    'imgcompare_cancel': 'キャンセル',
+    'imgcompare_compare_btn': '比較 →',
 }

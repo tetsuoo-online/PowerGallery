@@ -129,4 +129,12 @@ LANG = {
     'hint_read_metadata': 'Liest Generierungsparameter aus PNG-, WebP- und JPG-Dateien (Prompt, Modell, CFG, Seed…). Im Vollbild auf das Bild klicken zum Ein-/Ausblenden.',
     'options_metadata_extra': 'Extra fields',
     'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
+    # Img Compare
+    'imgcompare_title': 'Img Vergleich',
+    'imgcompare_hint': 'Ziehen Sie ein Bild aus der Gitteransicht oder aus Ihrem Datei-Explorer',
+    'imgcompare_left': 'Links',
+    'imgcompare_right': 'Rechts',
+    'imgcompare_drop_here': 'Hier ablegen',
+    'imgcompare_cancel': 'Abbrechen',
+    'imgcompare_compare_btn': 'Vergleichen →',
 }

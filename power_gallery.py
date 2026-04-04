@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QGridLayout, QFrame, QDialog, QComboBox, QLayout, QSizePolicy,
                              QCheckBox, QGroupBox, QListWidget, QListWidgetItem, QStackedWidget,
 QDialogButtonBox, QFormLayout, QSpinBox, QMessageBox)
-from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize
+from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize, QEventLoop
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon, QFontMetrics
 
 from config.settings import config
@@ -306,24 +306,229 @@ def format_metadata_for_display(card):
 
 
 
-# ── Grid2Img settings ─────────────────────────────────────────────────────────
+# ── Proxy card (lightweight stand-in for FullscreenViewer) ───────────────────
 
-_GRID2IMG_SETTINGS_FILE = Path(__file__).parent / 'config' / 'grid2img_settings.json'
+class _ProxyCard:
+    """Minimal card-like object for FullscreenViewer when no real ImageCard exists."""
+    def __init__(self, image_path):
+        self.image_path = image_path
+        self.module_data = {}
+        self.all_metadata = (read_image_metadata(image_path)
+                             if config.get('read_metadata') else {})
 
-def _load_grid2img_settings():
-    try:
-        if _GRID2IMG_SETTINGS_FILE.exists():
-            return json.loads(_GRID2IMG_SETTINGS_FILE.read_text(encoding='utf-8'))
-    except Exception:
-        pass
-    return {}
 
-def _save_grid2img_settings(data):
-    try:
-        _GRID2IMG_SETTINGS_FILE.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
-    except Exception as e:
-        print(f"[grid2img] Save error: {e}")
+# ── Img Compare Dialog ────────────────────────────────────────────────────────
+
+class ImgCompareDialog(QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(config.get_text('imgcompare_title'))
+        self.setFixedSize(520, 340)
+
+        colors = get_styles().COLORS
+        bg = colors.get('bg1', '#2e2e2e')
+        bg2 = colors.get('bg2', '#2b2b2b')
+        bg3 = colors.get('bg3', '#333333')
+        bg4 = colors.get('bg4', '#2b2b2b')
+        tab_bg = colors.get('tab_bg')
+        text1 = colors.get('text1', 'white')
+        text2 = colors.get('text2', '#888')
+        border1 = colors.get('border1', '#444')
+        accent = colors.get('accent', '#2196F3')
+        danger = colors.get('danger', '#c62828')
+        danger_hover = colors.get('danger_hover', '#eb3535')
+
+        self.setStyleSheet(f"""
+            QDialog {{ background: {tab_bg}; color: {text1}; }}
+            QLabel {{ color: {text1}; background: transparent; }}
+            QPushButton {{
+                background: {bg3}; color: {text1};
+                border: 1px solid {border1}; border-radius: 6px;
+                padding: 6px 14px;
+            }}
+            QPushButton:hover {{ background: {border1}; }}
+            QPushButton:disabled {{ color: {text2}; border-color: {border1}; }}
+            QPushButton#compare_btn {{
+                background: {accent}; color: {text1};
+                border: 1px solid {accent};
+            }}
+            QPushButton#compare_btn:hover {{ background: {border1}; }}
+            QPushButton#compare_btn:disabled {{
+                background: {bg3}; color: {text2}; border-color: {border1};
+            }}
+        """)
+
+        self._left_path = None
+        self._right_path = None
+        self._accent = accent
+        self._bg2 = bg2
+        self._border1 = border1
+        self._text2 = text2
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setContentsMargins(16, 16, 16, 16)
+
+        hint = QLabel(config.get_text('imgcompare_hint'))
+        hint.setStyleSheet(f"color: {text2}; font-style: italic; font-size: 12px;")
+        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(hint)
+
+        zones_row = QHBoxLayout()
+        zones_row.setSpacing(12)
+
+        left_label = config.get_text('imgcompare_left')
+        right_label = config.get_text('imgcompare_right')
+        drop_text = config.get_text('imgcompare_drop_here')
+
+        self._left_zone = self._make_drop_zone(left_label, drop_text)
+        self._right_zone = self._make_drop_zone(right_label, drop_text)
+
+        zones_row.addWidget(self._left_zone)
+
+        arrow = QLabel("→")
+        arrow.setFixedWidth(24)
+        arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        arrow.setStyleSheet(f"color: {text2}; font-size: 18px;")
+        zones_row.addWidget(arrow)
+
+        zones_row.addWidget(self._right_zone)
+        layout.addLayout(zones_row)
+
+        names_row = QHBoxLayout()
+        self._left_name = QLabel("—")
+        self._right_name = QLabel("—")
+        for lbl in (self._left_name, self._right_name):
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setStyleSheet(f"color: {text2}; font-size: 11px;")
+            lbl.setFixedWidth(220)
+        names_row.addWidget(self._left_name)
+        names_row.addSpacing(36)
+        names_row.addWidget(self._right_name)
+        layout.addLayout(names_row)
+
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        cancel_btn = QPushButton(config.get_text('imgcompare_cancel'))
+        cancel_btn.setFixedWidth(90)
+        cancel_btn.clicked.connect(self.reject)
+        self._compare_btn = QPushButton(config.get_text('imgcompare_compare_btn'))
+        self._compare_btn.setObjectName("compare_btn")
+        self._compare_btn.setFixedWidth(110)
+        self._compare_btn.setEnabled(False)
+        self._compare_btn.clicked.connect(self.accept)
+        btn_row.addWidget(cancel_btn)
+        btn_row.addWidget(self._compare_btn)
+        layout.addLayout(btn_row)
+
+    def _make_drop_zone(self, side_label, drop_text):
+        zone = _DropZoneLabel(side_label, drop_text, self)
+        zone.setFixedSize(220, 160)
+        zone.image_dropped.connect(lambda path, s=side_label: self._on_drop(path, s))
+        return zone
+
+    def _on_drop(self, path, side):
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            return
+        thumb = pixmap.scaled(200, 140, Qt.AspectRatioMode.KeepAspectRatio,
+                              Qt.TransformationMode.SmoothTransformation)
+        name = os.path.basename(path)
+        left_label = config.get_text('imgcompare_left')
+        if side == left_label:
+            self._left_path = path
+            self._left_zone.set_thumbnail(thumb)
+            self._left_name.setText(name)
+        else:
+            self._right_path = path
+            self._right_zone.set_thumbnail(thumb)
+            self._right_name.setText(name)
+        self._compare_btn.setEnabled(
+            self._left_path is not None and self._right_path is not None)
+
+    def get_paths(self):
+        return self._left_path, self._right_path
+
+
+class _DropZoneLabel(QLabel):
+    image_dropped = pyqtSignal(str)
+
+    def __init__(self, side_label, drop_text, parent=None):
+        super().__init__(parent)
+        self._side_label = side_label
+        self._drop_text = drop_text
+        self._has_image = False
+        colors = get_styles().COLORS
+        self._c_border = colors.get('border2', '#555')
+        self._c_bg = colors.get('bg4', '#333333')
+        self._c_text = colors.get('text2', '#888')
+        self._c_accent = colors.get('accent', '#2196F3')
+        self._c_bg2 = colors.get('bg2', '#2b2b2b')
+        self.setAcceptDrops(True)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._apply_idle_style()
+        self._update_text()
+
+    def _apply_idle_style(self):
+        self.setStyleSheet(
+            f"QLabel {{ border: 2px dashed {self._c_border}; border-radius: 8px; "
+            f"background: {self._c_bg}; color: {self._c_text}; font-size: 13px; }}"
+        )
+
+    def _apply_hover_style(self):
+        self.setStyleSheet(
+            f"QLabel {{ border: 2px dashed {self._c_accent}; border-radius: 8px; "
+            f"background: {self._c_bg}; color: {self._c_accent}; font-size: 13px; }}"
+        )
+
+    def _apply_filled_style(self):
+        self.setStyleSheet(
+            f"QLabel {{ border: 2px solid {self._c_accent}; border-radius: 8px; "
+            f"background: {self._c_bg2}; }}"
+        )
+
+    def _update_text(self):
+        if not self._has_image:
+            self.setText(f"{self._side_label}\n\n{self._drop_text}")
+
+    def set_thumbnail(self, pixmap):
+        self._has_image = True
+        self._apply_filled_style()
+        self.setPixmap(pixmap)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasText() or event.mimeData().hasUrls():
+            event.acceptProposedAction()
+            self._apply_hover_style()
+
+    def dragLeaveEvent(self, event):
+        if self._has_image:
+            self._apply_filled_style()
+        else:
+            self._apply_idle_style()
+
+    def dropEvent(self, event):
+        path = None
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                fp = url.toLocalFile()
+                if fp.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    path = fp
+                    break
+        elif event.mimeData().hasText():
+            candidate = event.mimeData().text()
+            if os.path.isfile(candidate) and candidate.lower().endswith(
+                    ('.png', '.jpg', '.jpeg', '.webp')):
+                path = candidate
+        if path:
+            event.acceptProposedAction()
+            self.image_dropped.emit(path)
+        else:
+            if self._has_image:
+                self._apply_filled_style()
+            else:
+                self._apply_idle_style()
 
 
 class Grid2ImgDialog(QDialog):
@@ -466,35 +671,7 @@ class Grid2ImgDialog(QDialog):
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)
 
-        self._load_settings()
-
-    def _load_settings(self):
-        s = _load_grid2img_settings()
-        if not s:
-            return
-        self.bg_combo.setCurrentText(s.get('background', 'White'))
-        self.spacing_spin.setValue(s.get('spacing', 10))
-        self.padding_spin.setValue(s.get('padding', 20))
-        self.title_size_spin.setValue(s.get('title_size', 24))
-        self.text_size_spin.setValue(s.get('text_size', 14))
-        self.res_spin.setValue(s.get('res_max', 1024))
-        self.grid_count_spin.setValue(s.get('grid_count', 4))
-        self.grid_by_row.setChecked(s.get('grid_mode', 'column') == 'row')
-        self.grid_by_col.setChecked(s.get('grid_mode', 'column') == 'column')
-        self.fmt_png.setChecked(s.get('format', 'png') == 'png')
-        self.fmt_webp.setChecked(s.get('format', 'png') == 'webp')
-        for key in ['filename', 'title', 'description', 'prompt', 'negative_prompt',
-                    'model', 'cfg', 'sampler', 'steps', 'seed', 'lora', 'lora_strength']:
-            cb = getattr(self, f'field_{key}', None)
-            if cb:
-                cb.setChecked(key in s.get('fields', []))
-
-    def _save_settings(self):
-        opts = self.get_options(save=False)
-        opts['background'] = self.bg_combo.currentText()
-        _save_grid2img_settings(opts)
-
-    def get_options(self, save=True):
+    def get_options(self):
         bg_map = {
             "White": QColor("white"),
             "Black": QColor("black"),
@@ -518,7 +695,7 @@ class Grid2ImgDialog(QDialog):
         fmt = "webp" if self.fmt_webp.isChecked() else "png"
         grid_mode = "row" if self.grid_by_row.isChecked() else "column"
 
-        result = {
+        return {
             "title": self.title_edit.text().strip(),
             "background": bg_map[self.bg_combo.currentText()],
             "spacing": self.spacing_spin.value(),
@@ -531,9 +708,6 @@ class Grid2ImgDialog(QDialog):
             "grid_mode": grid_mode,
             "format": fmt,
         }
-        if save:
-            self._save_settings()
-        return result
 
 # ── Tab widget ────────────────────────────────────────────────────────────────
 
@@ -1171,6 +1345,9 @@ class GridTab(QWidget):
         self.grid2img_btn = QPushButton("Grid2Img")
         self.grid2img_btn.clicked.connect(self.open_grid2img_dialog)
 
+        self.imgcompare_btn = QPushButton("ImgCompare")
+        self.imgcompare_btn.clicked.connect(self.open_imgcompare_dialog)
+
         self.export_btn = QPushButton(config.get_text('btn_export'))
         self.export_btn.clicked.connect(self.export_grid)
 
@@ -1189,6 +1366,7 @@ class GridTab(QWidget):
         controls1.addWidget(self.import_btn)
         controls1.addWidget(self.save_tabs_btn)
         controls1.addWidget(self.grid2img_btn)
+        controls1.addWidget(self.imgcompare_btn)
         controls1.addWidget(self.export_btn)
         controls1.addWidget(self.clear_btn)
         controls1.addWidget(self.refresh_btn)
@@ -1780,6 +1958,37 @@ class GridTab(QWidget):
         options = dlg.get_options()
         self.export_grid_to_image(options)
 
+    def open_imgcompare_dialog(self):
+        mw = self.get_main_window()
+        dlg = ImgCompareDialog(mw)
+
+        loop = QEventLoop()
+        dlg.accepted.connect(loop.quit)
+        dlg.rejected.connect(loop.quit)
+        dlg.show()
+        loop.exec()
+
+        if dlg.result() != QDialog.DialogCode.Accepted:
+            return
+        left_path, right_path = dlg.get_paths()
+        if not left_path or not right_path:
+            return
+
+        # Build two minimal proxy cards to feed FullscreenViewer
+        left_card = _ProxyCard(left_path)
+        right_card = _ProxyCard(right_path)
+
+        viewer = FullscreenViewer(left_card, self, mw, hide_tab_selector=True)
+        # Inject comparison directly
+        viewer.comparison_card = right_card
+        viewer.comparison_pixmap = QPixmap(right_path)
+        viewer.split_position = 0.5
+        viewer.info_label2.setVisible(True)
+        viewer.update_info_label()
+        viewer._update_meta_overlay_right()
+        viewer.image_container.update()
+        viewer.showFullScreen()
+
     def get_all_image_cards(self):
         cards = []
         for i in range(self.grid_layout.count()):
@@ -2007,7 +2216,7 @@ class GridTab(QWidget):
         } for card in self.cards]
 
         for card in self.cards[:]:
-            card.setParent(None)
+            card.deleteLater()
         self.cards.clear()
 
         module = self.get_active_module()
@@ -2147,15 +2356,7 @@ class MetadataOverlay(QWidget):
 
     def set_text(self, text):
         self._text = text
-        hint = f"\n\n{config.get_text('meta_display_hint')}"
-        if text:
-            hint_color = config.get_styles().COLORS.get('text2', '#888')
-            self.text_label.setText(
-                f'<span style="color:white;">{text.replace(chr(10), "<br>")}</span>'
-                f'<span style="color:{hint_color};">{hint.replace(chr(10), "<br>")}</span>'
-            )
-        else:
-            self.text_label.setText("no metadata")
+        self.text_label.setText(text)
 
     def toggle(self):
         self._visible = not self._visible
@@ -2201,7 +2402,7 @@ class MetadataOverlay(QWidget):
 # ── Fullscreen viewer ─────────────────────────────────────────────────────────
 
 class FullscreenViewer(QWidget):
-    def __init__(self, card, grid_tab, main_window, parent=None):
+    def __init__(self, card, grid_tab, main_window, parent=None, hide_tab_selector=False):
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFocus()
@@ -2252,6 +2453,10 @@ class FullscreenViewer(QWidget):
                     break
         else:
             self.grid_combo.addItem("Grid A (current)", 0)
+
+        if hide_tab_selector:
+            grid_label.setVisible(False)
+            self.grid_combo.setVisible(False)
 
         top_bar.addWidget(close_btn)
         top_bar.addStretch()
@@ -2433,12 +2638,12 @@ class FullscreenViewer(QWidget):
 
     def update_info_label(self):
         module = self.grid_tab.get_active_module()
-        ckpt = self.card.module_data.get('display_title', '') if module else ''
+        ckpt = self.card.module_data.get('checkpoint_name', '') if module else ''
         self.info_label.setText(
             f"{ckpt} - {os.path.basename(self.card.image_path)}"
             if ckpt else os.path.basename(self.card.image_path))
         if self.comparison_card:
-            ckpt2 = self.comparison_card.module_data.get('display_title', '') if module else ''
+            ckpt2 = self.comparison_card.module_data.get('checkpoint_name', '') if module else ''
             self.info_label2.setText(
                 f"{ckpt2} - {os.path.basename(self.comparison_card.image_path)}"
                 if ckpt2 else os.path.basename(self.comparison_card.image_path))
@@ -2553,6 +2758,7 @@ class SplashScreen(QWidget):
         font.setWeight(QFont.Weight.Normal)
         painter.setFont(font)
         painter.setPen(QColor('#555555'))
+        # painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, 'V 9')
         painter.drawText(self.rect().adjusted(0, 20, 0, 0), Qt.AlignmentFlag.AlignCenter, f'V {config.get_version()}')
 
         n_dots = 5
@@ -2724,7 +2930,7 @@ class MainWindow(QMainWindow):
     # ── UI ────────────────────────────────────────────────────────────────────
 
     def refresh_ui_texts(self, lang_changed=False):
-        self.setWindowTitle(f"Power Gallery {config.get_version()}")
+        self.setWindowTitle(config.get_text('window_title'))
         for i in range(self.tabs.count()):
             tab = self.tabs.widget(i)
             if hasattr(tab, 'refresh_ui_texts'):

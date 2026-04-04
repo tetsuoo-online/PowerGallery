@@ -129,4 +129,12 @@ LANG = {
     'hint_read_metadata': 'Reads generation parameters from PNG, WebP and JPG files (prompt, model, CFG, seed…). Click on image in fullscreen mode to toggle overlay.',
     'options_metadata_extra': 'Extra fields',
     'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
+    # Img Compare
+    'imgcompare_title': 'Img Compare',
+    'imgcompare_hint': 'Drag an image from the grid or from your file explorer',
+    'imgcompare_left': 'Left',
+    'imgcompare_right': 'Right',
+    'imgcompare_drop_here': 'Drop here',
+    'imgcompare_cancel': 'Cancel',
+    'imgcompare_compare_btn': 'Compare →',
 }

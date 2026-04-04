@@ -129,4 +129,12 @@ LANG = {
     'hint_read_metadata': 'Lê parâmetros de geração de arquivos PNG, WebP e JPG (prompt, modelo, CFG, seed…). Clique na imagem em tela cheia para alternar overlay.',
     'options_metadata_extra': 'Extra fields',
     'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
+    # Img Compare
+    'imgcompare_title': 'Comparar Imgens',
+    'imgcompare_hint': 'Arraste uma imagem da grade ou do seu explorador de arquivos',
+    'imgcompare_left': 'Esquerda',
+    'imgcompare_right': 'Direita',
+    'imgcompare_drop_here': 'Solte aqui',
+    'imgcompare_cancel': 'Cancelar',
+    'imgcompare_compare_btn': 'Comparar →',
 }

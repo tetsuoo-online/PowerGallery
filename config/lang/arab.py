@@ -129,4 +129,12 @@ LANG = {
     'hint_read_metadata': 'يقرأ معاملات التوليد من ملفات PNG وWebP وJPG (المطالبة، النموذج، CFG، البذرة…). انقر على الصورة في وضع ملء الشاشة لتبديل طبقة العرض.',
     'options_metadata_extra': 'Extra fields',
     'hint_metadata_extra': 'Show additional metadata fields (ExifTool pass-through data).',
+    # Img Compare
+    'imgcompare_title': 'مقارنة الصور',
+    'imgcompare_hint': 'اسحب صورة من الشبكة أو من مستعرض الملفات',
+    'imgcompare_left': 'يسار',
+    'imgcompare_right': 'يمين',
+    'imgcompare_drop_here': 'أفلت هنا',
+    'imgcompare_cancel': 'إلغاء',
+    'imgcompare_compare_btn': 'مقارنة →',
 }
