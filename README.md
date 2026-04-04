@@ -38,7 +38,7 @@ INSTALL.BAT
 Then launch with:
 
 ```
-START.BAT
+START.BAT (or the 'Power Gallery' shortcut created after Install)
 ```
 
 ---
