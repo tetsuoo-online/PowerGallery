@@ -4,10 +4,9 @@ _grids/
 grids/
 _temp/
 venv/
-*.ico
 *.pyc
 *.bak
-*- Copie*.py
+*- Copie*.*
 *.zip
 config/grid2img_settings.json
 config/ui_settings.json
