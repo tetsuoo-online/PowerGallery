@@ -15,9 +15,9 @@ if not exist venv (
 )
 
 REM ::DEBUG - Launch app with the console
-call venv\Scripts\activate.bat
-python power_gallery.py
-pause
+REM call venv\Scripts\activate.bat
+REM python power_gallery.py
+REM pause
 
 REM ::Launch app - no console
-REM start "" venv\Scripts\pythonw.exe power_gallery.py
+start "" venv\Scripts\pythonw.exe power_gallery.py
