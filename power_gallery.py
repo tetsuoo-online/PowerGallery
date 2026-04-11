@@ -1131,8 +1131,7 @@ class ImageCard(QFrame):
         bottom_widget = None
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
-            if bottom_widget is not None:
-                bottom_widget.setParent(self)
+            # setParent(self) omis — widget parenté correctement via self.setLayout(layout)
 
         self.description_edit = None
         if config.get('show_description'):

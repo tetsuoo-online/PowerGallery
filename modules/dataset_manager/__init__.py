@@ -233,6 +233,7 @@ class DatasetManager:
 
     @staticmethod
     def build_card_bottom(card):
+        image_path = card.image_path   # attribut Python pur — toujours sûr
         txt_edit = QTextEdit()
         txt_edit.setFixedHeight(80)
         txt_edit.setPlaceholderText(_get_config().get_text('dataset_no_txt'))
@@ -243,16 +244,30 @@ class DatasetManager:
             f"border: 1px solid {_colors.get('border1', '#444')}; "
             f"border-radius: 4px; font-size: 11px; padding: 2px; }}"
         )
-        txt_edit.setPlainText(DatasetManager.load_txt_content(card.image_path))
-
-        save_timer = QTimer(card)  # parented to card → auto-cleanup
-        save_timer.setSingleShot(True)
-        save_timer.timeout.connect(lambda: DatasetManager._save_txt(card))
-        card._txt_save_timer = save_timer
-        card.txt_edit = txt_edit
-
-        txt_edit.textChanged.connect(lambda: save_timer.start(800))
+        txt_edit.setPlainText(DatasetManager.load_txt_content(image_path))
+        # Tout accès à card comme objet C++ Qt est différé au prochain cycle event loop.
+        # Évite RuntimeError/segfault quand Qt invalide le wrapper C++ mid-construction.
+        QTimer.singleShot(0, lambda: DatasetManager._wire_txt_edit(card, txt_edit))
         return txt_edit
+
+    @staticmethod
+    def _wire_txt_edit(card, txt_edit):
+        """Câblage différé — s'exécute après construction complète de la card."""
+        try:
+            from PyQt6 import sip as _sip
+            if _sip.isdeleted(card) or _sip.isdeleted(txt_edit):
+                return
+        except Exception:
+            pass
+        try:
+            card.txt_edit = txt_edit
+            save_timer = QTimer(card)
+            save_timer.setSingleShot(True)
+            save_timer.timeout.connect(lambda: DatasetManager._save_txt(card))
+            card._txt_save_timer = save_timer
+            txt_edit.textChanged.connect(lambda: save_timer.start(800))
+        except RuntimeError:
+            pass
 
     @staticmethod
     def _save_txt(card):
