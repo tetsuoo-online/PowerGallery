@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QScrollArea, QTabWidget, QSlider, QLineEdit, QTextEdit,
                              QGridLayout, QFrame, QDialog, QComboBox, QLayout, QSizePolicy,
                              QCheckBox, QGroupBox, QListWidget, QListWidgetItem, QStackedWidget,
-QDialogButtonBox, QFormLayout, QSpinBox, QMessageBox)
+                             QDialogButtonBox, QFormLayout, QSpinBox, QMessageBox)
 from PyQt6.QtCore import Qt, QPoint, QRect, QTimer, pyqtSignal, QMimeData, QSize, QEventLoop
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QFont, QDrag, QPalette, QPen, QIcon, QFontMetrics
 
@@ -303,9 +303,6 @@ def format_metadata_for_display(card):
 
     return '\n'.join(lines)
 
-
-
-
 # ── Proxy card (lightweight stand-in for FullscreenViewer) ───────────────────
 
 class _ProxyCard:
@@ -530,6 +527,25 @@ class _DropZoneLabel(QLabel):
             else:
                 self._apply_idle_style()
 
+# ── Grid2Img settings ─────────────────────────────────────────────────────────
+
+_GRID2IMG_SETTINGS_FILE = Path(__file__).parent / 'config' / 'grid2img_settings.json'
+
+def _load_grid2img_settings():
+    try:
+        if _GRID2IMG_SETTINGS_FILE.exists():
+            return json.loads(_GRID2IMG_SETTINGS_FILE.read_text(encoding='utf-8'))
+    except Exception:
+        pass
+    return {}
+
+def _save_grid2img_settings(data):
+    try:
+        _GRID2IMG_SETTINGS_FILE.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    except Exception as e:
+        print(f"[grid2img] Save error: {e}")
+
 
 class Grid2ImgDialog(QDialog):
     from config.options_style import apply_options_style
@@ -671,7 +687,35 @@ class Grid2ImgDialog(QDialog):
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)
 
-    def get_options(self):
+        self._load_settings()
+
+    def _load_settings(self):
+        s = _load_grid2img_settings()
+        if not s:
+            return
+        self.bg_combo.setCurrentText(s.get('background', 'White'))
+        self.spacing_spin.setValue(s.get('spacing', 10))
+        self.padding_spin.setValue(s.get('padding', 20))
+        self.title_size_spin.setValue(s.get('title_size', 24))
+        self.text_size_spin.setValue(s.get('text_size', 14))
+        self.res_spin.setValue(s.get('res_max', 1024))
+        self.grid_count_spin.setValue(s.get('grid_count', 4))
+        self.grid_by_row.setChecked(s.get('grid_mode', 'column') == 'row')
+        self.grid_by_col.setChecked(s.get('grid_mode', 'column') == 'column')
+        self.fmt_png.setChecked(s.get('format', 'png') == 'png')
+        self.fmt_webp.setChecked(s.get('format', 'png') == 'webp')
+        for key in ['filename', 'title', 'description', 'prompt', 'negative_prompt',
+                    'model', 'cfg', 'sampler', 'steps', 'seed', 'lora', 'lora_strength']:
+            cb = getattr(self, f'field_{key}', None)
+            if cb:
+                cb.setChecked(key in s.get('fields', []))
+
+    def _save_settings(self):
+        opts = self.get_options(save=False)
+        opts['background'] = self.bg_combo.currentText()
+        _save_grid2img_settings(opts)
+
+    def get_options(self, save=True):
         bg_map = {
             "White": QColor("white"),
             "Black": QColor("black"),
@@ -695,19 +739,22 @@ class Grid2ImgDialog(QDialog):
         fmt = "webp" if self.fmt_webp.isChecked() else "png"
         grid_mode = "row" if self.grid_by_row.isChecked() else "column"
 
-        return {
+        result = {
             "title": self.title_edit.text().strip(),
             "background": bg_map[self.bg_combo.currentText()],
             "spacing": self.spacing_spin.value(),
             "padding": self.padding_spin.value(),
             "title_size": self.title_size_spin.value(),
             "text_size": self.text_size_spin.value(),
-            "fields": fields,
             "res_max": self.res_spin.value(),
             "grid_count": self.grid_count_spin.value(),
             "grid_mode": grid_mode,
             "format": fmt,
+            "fields": fields,
         }
+        if save:
+            self._save_settings()
+        return result
 
 # ── Tab widget ────────────────────────────────────────────────────────────────
 
@@ -834,8 +881,8 @@ class OptionsDialog(QDialog):
         extra_row.addSpacing(22)
         extra_row.addWidget(self.metadata_extra)
         extra_row.addStretch()
-        extra_widget = QWidget()
-        extra_widget.setLayout(extra_row)
+        self.extra_widget = QWidget()
+        self.extra_widget.setLayout(extra_row)
 
         # Fullscreen opacity
         opacity_row = QHBoxLayout()
@@ -855,8 +902,8 @@ class OptionsDialog(QDialog):
         opacity_row.addWidget(self.opacity_spinbox)
         opacity_row.addWidget(QLabel("%"))
         opacity_row.addStretch()
-        opacity_widget = QWidget()
-        opacity_widget.setLayout(opacity_row)
+        self.opacity_widget = QWidget()
+        self.opacity_widget.setLayout(opacity_row)
 
         self._install_option_hover(import_group, 'hint_import_mode')
         self._install_option_hover(self.import_in_tabs, 'hint_import_in_tabs')
@@ -874,8 +921,8 @@ class OptionsDialog(QDialog):
         layout.addWidget(self.show_title)
         layout.addWidget(self.show_description)
         layout.addWidget(self.read_metadata)
-        layout.addWidget(extra_widget)
-        layout.addWidget(opacity_widget)
+        layout.addWidget(self.extra_widget)
+        layout.addWidget(self.opacity_widget)
         layout.addStretch()
         tab.setLayout(layout)
         return tab
@@ -1131,7 +1178,6 @@ class ImageCard(QFrame):
         bottom_widget = None
         if module and hasattr(module, 'build_card_bottom'):
             bottom_widget = module.build_card_bottom(self)
-            # setParent(self) omis — widget parenté correctement via self.setLayout(layout)
 
         self.description_edit = None
         if config.get('show_description'):
@@ -1453,11 +1499,15 @@ class GridTab(QWidget):
             return
         config.set_selected_module(key)
         self.update_module_dropdown()
-        if self.cards:
-            self.refresh_cards()
         mw = self.get_main_window()
-        if mw:
-            mw.apply_styles()
+
+        def _deferred():
+            if self.cards:
+                self.refresh_cards()
+            if mw:
+                mw.apply_styles()
+
+        QTimer.singleShot(0, _deferred)
 
     # ── Module dropdown ───────────────────────────────────────────────────────
 
@@ -1687,9 +1737,9 @@ class GridTab(QWidget):
         if tab_widget and tab_widget.count() > 1:
             idx = tab_widget.indexOf(self)
             if idx >= 0:
+                mw = self.get_main_window()
                 tab_widget.removeTab(idx)
-                self.deleteLater()
-                mw = self.get_main_window() if tab_widget.count() > 0 else None
+                self.setParent(None)
                 if mw:
                     mw._auto_save_session_if_enabled()
         else:
@@ -1797,7 +1847,7 @@ class GridTab(QWidget):
 
     def clear_grid(self):
         for card in self.cards[:]:
-            card.deleteLater()
+            card.setParent(None)
         self.cards.clear()
         self.refresh_grid()
         self.log(config.get_text('msg_loaded'))
@@ -1944,19 +1994,6 @@ class GridTab(QWidget):
 
     # ── Card refresh ──────────────────────────────────────────────────────────
 
-    def open_grid2img_dialog(self):
-        cards = self.get_all_image_cards()
-        if not cards:
-            QMessageBox.information(self, "Grid2Img", "No images to export.")
-            return
-
-        dlg = Grid2ImgDialog(self)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        options = dlg.get_options()
-        self.export_grid_to_image(options)
-
     def open_imgcompare_dialog(self):
         mw = self.get_main_window()
         dlg = ImgCompareDialog(mw)
@@ -1987,6 +2024,19 @@ class GridTab(QWidget):
         viewer._update_meta_overlay_right()
         viewer.image_container.update()
         viewer.showFullScreen()
+
+    def open_grid2img_dialog(self):
+        cards = self.get_all_image_cards()
+        if not cards:
+            QMessageBox.information(self, "Grid2Img", "No images to export.")
+            return
+
+        dlg = Grid2ImgDialog(self)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        options = dlg.get_options()
+        self.export_grid_to_image(options)
 
     def get_all_image_cards(self):
         cards = []
@@ -2214,8 +2264,7 @@ class GridTab(QWidget):
             'module_data': card.module_data,
         } for card in self.cards]
 
-        for card in self.cards[:]:
-            card.deleteLater()
+        old_cards = list(self.cards)
         self.cards.clear()
 
         module = self.get_active_module()
@@ -2235,6 +2284,9 @@ class GridTab(QWidget):
 
         self.refresh_grid()
         self.log(config.get_text('msg_refreshed_cards').format(n=len(self.cards)))
+
+        for card in old_cards:
+            card.setParent(None)
 
     # ── UI helpers ────────────────────────────────────────────────────────────
 
@@ -2355,7 +2407,15 @@ class MetadataOverlay(QWidget):
 
     def set_text(self, text):
         self._text = text
-        self.text_label.setText(text)
+        hint = f"\n\n{config.get_text('meta_display_hint')}"
+        if text:
+            hint_color = config.get_styles().COLORS.get('text2', '#888')
+            self.text_label.setText(
+                f'<span style="color:white;">{text.replace(chr(10), "<br>")}</span>'
+                f'<span style="color:{hint_color};">{hint.replace(chr(10), "<br>")}</span>'
+            )
+        else:
+            self.text_label.setText("no metadata")
 
     def toggle(self):
         self._visible = not self._visible
@@ -2638,12 +2698,12 @@ class FullscreenViewer(QWidget):
 
     def update_info_label(self):
         module = self.grid_tab.get_active_module()
-        ckpt = self.card.module_data.get('checkpoint_name', '') if module else ''
+        ckpt = self.card.module_data.get('display_title', '') if module else ''
         self.info_label.setText(
             f"{ckpt} - {os.path.basename(self.card.image_path)}"
             if ckpt else os.path.basename(self.card.image_path))
         if self.comparison_card:
-            ckpt2 = self.comparison_card.module_data.get('checkpoint_name', '') if module else ''
+            ckpt2 = self.comparison_card.module_data.get('display_title', '') if module else ''
             self.info_label2.setText(
                 f"{ckpt2} - {os.path.basename(self.comparison_card.image_path)}"
                 if ckpt2 else os.path.basename(self.comparison_card.image_path))
@@ -2908,7 +2968,7 @@ class MainWindow(QMainWindow):
         if self.tabs.count() > 1:
             widget = self.tabs.widget(index)
             self.tabs.removeTab(index)
-            widget.deleteLater()
+            widget.setParent(None)
             self._auto_save_session_if_enabled()
         else:
             tab = self.tabs.widget(index)
@@ -2921,7 +2981,7 @@ class MainWindow(QMainWindow):
         while self.tabs.count() > 0:
             widget = self.tabs.widget(0)
             self.tabs.removeTab(0)
-            widget.deleteLater()
+            widget.setParent(None)
         self.add_tab()
 
     def closeEvent(self, event):
@@ -2931,7 +2991,7 @@ class MainWindow(QMainWindow):
     # ── UI ────────────────────────────────────────────────────────────────────
 
     def refresh_ui_texts(self, lang_changed=False):
-        self.setWindowTitle(config.get_text('window_title'))
+        self.setWindowTitle(f"Power Gallery {config.get_version()}")
         for i in range(self.tabs.count()):
             tab = self.tabs.widget(i)
             if hasattr(tab, 'refresh_ui_texts'):

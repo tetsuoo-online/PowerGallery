@@ -63,13 +63,13 @@ class FlowLayout(QLayout):
         spacing = self.spacing()
         for item in self.item_list:
             w = item.widget()
-            sx = spacing + w.style().layoutSpacing(
-                QSizePolicy.ControlType.PushButton, QSizePolicy.ControlType.PushButton, Qt.Orientation.Horizontal)
-            sy = spacing + w.style().layoutSpacing(
-                QSizePolicy.ControlType.PushButton, QSizePolicy.ControlType.PushButton, Qt.Orientation.Vertical)
-            next_x = x + item.sizeHint().width() + sx
-            if next_x - sx > rect.right() and line_height > 0:
-                x, y, next_x = rect.x(), y + line_height + sy, rect.x() + item.sizeHint().width() + sx
+            if w is None:
+                continue
+            next_x = x + item.sizeHint().width() + spacing
+            if next_x - spacing > rect.right() and line_height > 0:
+                x = rect.x()
+                y += line_height + spacing
+                next_x = x + item.sizeHint().width() + spacing
                 line_height = 0
             if not test_only:
                 item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
@@ -167,8 +167,8 @@ class CheckpointManager:
         top_layout.addWidget(card.checkpoint_label)
         top_layout.addStretch()
         top_layout.addWidget(card.score_label)
-
-        CheckpointManager.apply_card_styles(card)
+        # apply_card_styles n'est PAS appelé ici.
+        # update_borders() le fait pour toutes les cards après construction via refresh_grid().
 
     @staticmethod
     def build_card_bottom(card):
