@@ -20,6 +20,7 @@ from config.settings import config
 from widgets import CardDetailsDialog
 from modules.checkpoint_manager import CheckpointManager
 from modules.dataset_manager import DatasetManager
+from modules.criteria_manager import CriteriaManager
 
 def get_styles():
     return config.get_styles()
@@ -28,6 +29,7 @@ def get_styles():
 MODULE_REGISTRY = {
     'checkpoint_manager': CheckpointManager,
     'dataset': DatasetManager,
+    'criteria_manager': CriteriaManager,
 }
 
 
