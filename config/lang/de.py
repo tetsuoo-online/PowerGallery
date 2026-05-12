@@ -137,4 +137,12 @@ LANG = {
     'imgcompare_drop_here': 'Hier ablegen',
     'imgcompare_cancel': 'Abbrechen',
     'imgcompare_compare_btn': 'Vergleichen →',
+    # Criteria Manager
+    'criteria_manager_action_criterias': 'Kriterien',
+    'criteria_manager_dialog_title': 'Kriterien bearbeiten',
+    'criteria_manager_dialog_label': 'Kriterien (ziehen zum Sortieren, doppelklicken zum Umbenennen)',
+    'criteria_manager_add': 'Hinzufügen',
+    'criteria_manager_remove': 'Entfernen',
+    'criteria_manager_reset': 'Standardwerte zurücksetzen',
+    'criteria_manager_updated': 'Kriterien aktualisiert ({n} Elemente)'
 }

@@ -137,4 +137,12 @@ LANG = {
     'imgcompare_drop_here': 'أفلت هنا',
     'imgcompare_cancel': 'إلغاء',
     'imgcompare_compare_btn': 'مقارنة →',
+    # Criteria Manager
+    'criteria_manager_action_criterias': 'المعايير',
+    'criteria_manager_dialog_title': 'تعديل المعايير',
+    'criteria_manager_dialog_label': 'المعايير (اسحب لإعادة الترتيب، انقر مرتين لإعادة التسمية)',
+    'criteria_manager_add': 'إضافة',
+    'criteria_manager_remove': 'إزالة',
+    'criteria_manager_reset': 'استعادة الإعدادات الافتراضية',
+    'criteria_manager_updated': 'تم تحديث المعايير ({n} عناصر)'
 }

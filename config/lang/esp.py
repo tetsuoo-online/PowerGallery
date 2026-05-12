@@ -137,4 +137,12 @@ LANG = {
     'imgcompare_drop_here': 'Suelte aquí',
     'imgcompare_cancel': 'Cancelar',
     'imgcompare_compare_btn': 'Comparar →',
+    # Criteria Manager
+    'criteria_manager_action_criterias': 'Criterios',
+    'criteria_manager_dialog_title': 'Editar criterios',
+    'criteria_manager_dialog_label': 'Criterios (arrastrar para reordenar, doble clic para renombrar)',
+    'criteria_manager_add': 'Añadir',
+    'criteria_manager_remove': 'Eliminar',
+    'criteria_manager_reset': 'Restablecer valores predeterminados',
+    'criteria_manager_updated': 'Criterios actualizados ({n} elementos)'
 }

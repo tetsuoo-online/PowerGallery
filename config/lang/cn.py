@@ -137,4 +137,12 @@ LANG = {
     'imgcompare_drop_here': '放在这里',
     'imgcompare_cancel': '取消',
     'imgcompare_compare_btn': '比较 →',
+    # Criteria Manager
+    'criteria_manager_action_criterias': '标准',
+    'criteria_manager_dialog_title': '编辑标准',
+    'criteria_manager_dialog_label': '标准（拖动可重新排序，双击可重命名）',
+    'criteria_manager_add': '添加',
+    'criteria_manager_remove': '删除',
+    'criteria_manager_reset': '重置默认值',
+    'criteria_manager_updated': '标准已更新（{n} 项）'
 }

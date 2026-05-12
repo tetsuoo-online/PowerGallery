@@ -137,4 +137,12 @@ LANG = {
     'imgcompare_drop_here': 'ここにドロップ',
     'imgcompare_cancel': 'キャンセル',
     'imgcompare_compare_btn': '比較 →',
+    # Criteria Manager
+    'criteria_manager_action_criterias': '評価基準',
+    'criteria_manager_dialog_title': '基準を編集',
+    'criteria_manager_dialog_label': '基準（ドラッグで並べ替え、ダブルクリックで名前変更）',
+    'criteria_manager_add': '追加',
+    'criteria_manager_remove': '削除',
+    'criteria_manager_reset': 'デフォルトにリセット',
+    'criteria_manager_updated': '基準を更新しました（{n}項目）'
 }
